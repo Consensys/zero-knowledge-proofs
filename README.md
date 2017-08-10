@@ -2,6 +2,8 @@
 
 This question will be based on a simple balance update example.  [This link provides a good background to the question](https://media.consensys.net/introduction-to-zksnarks-with-examples-3283b554fc3b)
 
+Some additional background [Quadratic Arithmetic Programs: from Zero to Hero](https://medium.com/@VitalikButerin/quadratic-arithmetic-programs-from-zero-to-hero-f6d558cea649)
+
 The question has a number of parts:
 
 ## Part 1: produce a zero knowledge proof that can be verified ##
