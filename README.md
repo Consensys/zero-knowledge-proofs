@@ -17,9 +17,9 @@ Given the code here: (TBD), create a zero knowledge proof that takes the followi
 
 you will be provided with the following:
 
-* e1 = entropy (salt) for r1
-* e2 = entropy (salt) for r2
-* e3 = entropy (salt) for r3
+* salt1 = entropy (salt) for r1
+* salt2 = entropy (salt) for r2
+* salt3 = entropy (salt) for r3
 * prover key for the proof generator
 
 The proof generator should take the private inputs (r1,r2 & r3) and the public inputs (h1,h2 & h3) and output a proof.  The proof should be put into an output file.
