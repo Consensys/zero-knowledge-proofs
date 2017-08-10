@@ -1,29 +1,33 @@
-# README #
+# zk-snarks question #
 
-This README would normally document whatever steps are necessary to get your application up and running.
+This question will be based on a simple balance update example.  [This link provides a good background to the question](https://media.consensys.net/introduction-to-zksnarks-with-examples-3283b554fc3b)
 
-### What is this repository for? ###
+The question has a number of parts:
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+## Part 1: produce a zero knowledge proof that can be verified ##
 
-### How do I get set up? ###
+Given the code here: (TBD), create a zero knowledge proof that takes the following inputs
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
+* r1 (integer) = 2
+* r2 (integer) = 2
+* h1 = salted hash of r1
+* h2 = salted hash of r2
 
-### Contribution guidelines ###
+you will be provided with the following:
 
-* Writing tests
-* Code review
-* Other guidelines
+* e1 = entropy (salt) for r1
+* e2 = entropy (salt) for r2
+* prover key for the proof generator
 
-### Who do I talk to? ###
+The proof generator should take the private inputs (r1 and r2) and the public inputs (h1 and h2) and output a proof.  The proof should be put into an output file.
 
-* Repo owner or admin
-* Other community or team contact
+The proof will be that r1 * 2 = r2
+
+The proof will be validated using the validator key and the public inputs (h1 and h2)
+
+## Part 2: determine the level of security (in bits) that this solution provides ##
+
+In a brute force attack, what is the level of security on private data (r1 and r2) in this solution
+
+
+
