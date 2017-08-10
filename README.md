@@ -9,25 +9,28 @@ The question has a number of parts:
 Given the code here: (TBD), create a zero knowledge proof that takes the following inputs
 
 * r1 (integer) = 2
-* r2 (integer) = 2
+* r2 (integer) = 3
+* r3 (integer) = 5
 * h1 = salted hash of r1
 * h2 = salted hash of r2
+* h3 = salted hash of r3
 
 you will be provided with the following:
 
 * e1 = entropy (salt) for r1
 * e2 = entropy (salt) for r2
+* e3 = entropy (salt) for r3
 * prover key for the proof generator
 
-The proof generator should take the private inputs (r1 and r2) and the public inputs (h1 and h2) and output a proof.  The proof should be put into an output file.
+The proof generator should take the private inputs (r1,r2 & r3) and the public inputs (h1,h2 & h3) and output a proof.  The proof should be put into an output file.
 
-The proof will be that r1 * 2 = r2
+The proof will be that r1 + r2 = r3
 
-The proof will be validated using the validator key and the public inputs (h1 and h2)
+The proof will be validated using the validator key and the public inputs (h1,h2 and h3)
 
 ## Part 2: determine the level of security (in bits) that this solution provides ##
 
-In a brute force attack, what is the level of security on private data (r1 and r2) in this solution
+In a brute force attack, what is the level of security on private data (r1, r2 and r2) in this solution
 
 
 
