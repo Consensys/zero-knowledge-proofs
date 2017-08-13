@@ -176,65 +176,64 @@ public:
         generate_r1cs_equals_const_constraint<FieldT>(this->pb, zero, FieldT::zero(), "zero");
 
         unsigned int NN = sha256_digest_len/2;
-
+        // a = intermediate_val
+        // Constraint a[0] = r[0]
             this->pb.add_r1cs_constraint(
                 r1cs_constraint<FieldT>(
                     intermediate_val1[0],
                     1, 
-                    r1_var->bits[NN - 1]),
+                    r1_var->bits[0]),
                 FMT(this->annotation_prefix, " zero1_%zu", 0));
 
             this->pb.add_r1cs_constraint(
                 r1cs_constraint<FieldT>(
                     intermediate_val2[0],
                     1, 
-                    r2_var->bits[NN - 1]),
+                    r2_var->bits[0]),
                 FMT(this->annotation_prefix, " zero2_%zu", 0));
 
             this->pb.add_r1cs_constraint(
                 r1cs_constraint<FieldT>(
                     intermediate_val3[0],
                     1, 
-                    r3_var->bits[NN - 1]),
+                    r3_var->bits[0]),
                 FMT(this->annotation_prefix, " zero3_%zu", 0));
-
+            
 
         for (unsigned int i = 1; i < NN; i++) {
-          // a[i] = 2*a[i-1] + x[NN -1 - i] 
+          // a[i] = 2*a[i-1] + r[i]
           //
           // Constraint containing the intermediate steps in the calculation
-          // a[N-1] = sum_i^{NN-1} 2^i * x[i]
+          // a[NN-1] = \sum_{i=0}^{NN-1} 2^i * r[NN-1-i]
             this->pb.add_r1cs_constraint(
                 r1cs_constraint<FieldT>(
                     { intermediate_val1[i] },
-                    { ONE }, 
-                  { intermediate_val1[i-1] * 2 , r1_var->bits[NN - 1 -i] }), 
+                    { ONE },
+                  { intermediate_val1[i-1] * 2 , r1_var->bits[i] }), 
                 FMT(this->annotation_prefix, " sum1_%zu", i));
 
             this->pb.add_r1cs_constraint(
                 r1cs_constraint<FieldT>(
                     { intermediate_val2[i] },
                     { 1 }, 
-                    { intermediate_val2[i-1] * 2, r2_var->bits[NN - 1 -i] }), 
+                    { intermediate_val2[i-1] * 2, r2_var->bits[i] }), 
                 FMT(this->annotation_prefix, " sum2_%zu", i));
 
             this->pb.add_r1cs_constraint(
                 r1cs_constraint<FieldT>(
                     { intermediate_val3[i] },
                     { 1 }, 
-                    { intermediate_val3[i-1] * 2, r3_var->bits[NN - 1 -i] }), 
+                    { intermediate_val3[i-1] * 2, r3_var->bits[i] }), 
                 FMT(this->annotation_prefix, " sum3_%zu", i));
         }
 
-        // Constraint that r1 * 2 = r1 + r3
-        // This is a placeholder until I can compute examples
-        // to test r3 = r1 + r2.
-        // This should not change any benchmarks.
+
+        // Constraint that r3 = r1 + r2
             this->pb.add_r1cs_constraint(
                 r1cs_constraint<FieldT>(
                     { intermediate_val3[NN-1] },
-                    { 2 }, 
-                    { intermediate_val1[NN-1], intermediate_val3[NN-1]}), 
+                    { 1 },
+                    { intermediate_val1[NN-1], intermediate_val2[NN-1]}), 
                 FMT(this->annotation_prefix, "finalsum_%zu", 0));
         
 
@@ -262,14 +261,14 @@ public:
         std::vector<FieldT> interm2(NN);
         std::vector<FieldT> interm3(NN);
 
-        interm1[0] = r1[NN-1] ? FieldT::one() : FieldT::zero();
-        interm2[0] = r2[NN-1] ? FieldT::one() : FieldT::zero();
-        interm3[0] = r3[NN-1] ? FieldT::one() : FieldT::zero();
+        interm1[0] = r1[0] ? FieldT::one() : FieldT::zero();
+        interm2[0] = r2[0] ? FieldT::one() : FieldT::zero();
+        interm3[0] = r3[0] ? FieldT::one() : FieldT::zero();
 
         for (size_t i=1; i<NN; i++) {
-          interm1[i] = interm1[i-1] * 2 + (r1[NN - 1 - i] ? FieldT::one() : FieldT::zero());
-          interm2[i] = interm2[i-1] * 2 + (r2[NN - 1 - i] ? FieldT::one() : FieldT::zero());
-          interm3[i] = interm3[i-1] * 2 + (r3[NN - 1 - i] ? FieldT::one() : FieldT::zero());
+          interm1[i] = interm1[i-1] * 2 + (r1[i] ? FieldT::one() : FieldT::zero());
+          interm2[i] = interm2[i-1] * 2 + (r2[i] ? FieldT::one() : FieldT::zero());
+          interm3[i] = interm3[i-1] * 2 + (r3[i] ? FieldT::one() : FieldT::zero());
         }
 
         intermediate_val1.fill_with_field_elements(this->pb, interm1);
