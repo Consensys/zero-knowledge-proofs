@@ -1,0 +1,24 @@
+{
+  "name": "node-proof-generator",
+  "version": "1.0.0",
+  "description": "Proof Generator written in node (for project Ubin)",
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {},
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://bitbucket.org/petermunnings/zkp.git"
+  },
+  "keywords": [
+    "zero",
+    "knowledge",
+    "proof"
+  ],
+  "author": "Peter Munnings",
+  "license": "ISC",
+  "homepage": "https://bitbucket.org/petermunnings/zkp#readme"
+}
