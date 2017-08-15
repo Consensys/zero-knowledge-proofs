@@ -33,8 +33,11 @@ There are two files that are of interest:
 The first file (the test file) contains sample test vectors for r1, r2 and r3, as well as their hashes. This file generates a new keypair (prover and verification) and makes a call to 
 generate the zero knowledge proof (via `src/snark.hpp`) and then also verifies that the proof generated.
 
-The second file has 3 steps with clearly marked TODO sections to complete. Once these three steps are filled in and correct, Bob will have a zero knowledge system which he can use to verify
-Alice's claims.
+The second file has 3 steps with clearly marked TODO sections to complete. 
+
+## The task ##
+
+Once the three steps in the `src/gadget.hpp` file are filled in and correct, Bob will have a zero knowledge system which he can use to verify Alice's claims.
 
 ## Usefull links ##
 
