@@ -175,66 +175,54 @@ public:
 
         generate_r1cs_equals_const_constraint<FieldT>(this->pb, zero, FieldT::zero(), "zero");
 
-        unsigned int NN = sha256_digest_len/2;
-        // a = intermediate_val
-        // Constraint a[0] = r[0]
-            this->pb.add_r1cs_constraint(
-                r1cs_constraint<FieldT>(
-                    intermediate_val1[0],
-                    1, 
-                    r1_var->bits[0]),
-                FMT(this->annotation_prefix, " zero1_%zu", 0));
+        // We are using half of the digest length as salt and the other half for the value
+        unsigned int NN = sha256_digest_len/2; // 128
 
-            this->pb.add_r1cs_constraint(
-                r1cs_constraint<FieldT>(
-                    intermediate_val2[0],
-                    1, 
-                    r2_var->bits[0]),
-                FMT(this->annotation_prefix, " zero2_%zu", 0));
+        // Step 2: We need to confirm that the (binary, big-endian encoded) values of 
+        // r1_var->bits[0, ..., 127], r2_var->bits[0, ..., 127] and r3_var->bits[0, ..., 127] 
+        // correspond to the decimal values in intermediate_val1, intermediate_val2 and 
+        // intermediate_val3. Construct the vectors A, B and C such that they form an R1CS that checks  
+        // the above.
+        // 
+        // A set of three vectors (A, B and C) will need to be constructed for each constraint. That is, 
+        // atleast 3 sets of 3 vectors (i.e 9) will be required to complete this step. 
+        // Note that there can be more.
 
-            this->pb.add_r1cs_constraint(
-                r1cs_constraint<FieldT>(
-                    intermediate_val3[0],
-                    1, 
-                    r3_var->bits[0]),
-                FMT(this->annotation_prefix, " zero3_%zu", 0));
-            
+        // <------------- TODO start -------------------->
 
-        for (unsigned int i = 1; i < NN; i++) {
-          // a[i] = 2*a[i-1] + r[i]
-          //
-          // Constraint containing the intermediate steps in the calculation
-          // a[NN-1] = \sum_{i=0}^{NN-1} 2^i * r[NN-1-i]
-            this->pb.add_r1cs_constraint(
-                r1cs_constraint<FieldT>(
-                    { intermediate_val1[i] },
-                    { ONE },
-                  { intermediate_val1[i-1] * 2 , r1_var->bits[i] }), 
-                FMT(this->annotation_prefix, " sum1_%zu", i));
+        // This is an example of how a constraint is added to the protoboard.
+        {
+          auto A = 1;
+          auto B = 1;
+          auto C = 1;
 
-            this->pb.add_r1cs_constraint(
-                r1cs_constraint<FieldT>(
-                    { intermediate_val2[i] },
-                    { 1 }, 
-                    { intermediate_val2[i-1] * 2, r2_var->bits[i] }), 
-                FMT(this->annotation_prefix, " sum2_%zu", i));
-
-            this->pb.add_r1cs_constraint(
-                r1cs_constraint<FieldT>(
-                    { intermediate_val3[i] },
-                    { 1 }, 
-                    { intermediate_val3[i-1] * 2, r3_var->bits[i] }), 
-                FMT(this->annotation_prefix, " sum3_%zu", i));
+          this->pb.add_r1cs_constraint(
+              r1cs_constraint<FieldT>(
+                  A,
+                  B,
+                  C),
+              FMT(this->annotation_prefix, "", 0));
         }
+        // <------------- TODO end -------------------->
 
+        // <------------- TODO start -------------------->
 
-        // Constraint that r3 = r1 + r2
-            this->pb.add_r1cs_constraint(
-                r1cs_constraint<FieldT>(
-                    { intermediate_val3[NN-1] },
-                    { 1 },
-                    { intermediate_val1[NN-1], intermediate_val2[NN-1]}), 
-                FMT(this->annotation_prefix, "finalsum_%zu", 0));
+        // Step 3: We need to confirm that r3 = r1 + r1. Add a constraint for this by constructing three 
+        // vectors A, B and C. Refer to step 2 for more information on constraints.
+
+        {
+          auto A = 1;
+          auto B = 1;
+          auto C = 1;
+
+          this->pb.add_r1cs_constraint(
+              r1cs_constraint<FieldT>(
+                  A,
+                  B,
+                  C),
+              FMT(this->annotation_prefix, "", 0));
+        }
+        // <------------- TODO end -------------------->
         
 
         // These are the constraints to ensure the hashes validate.
@@ -242,6 +230,9 @@ public:
         h_r2->generate_r1cs_constraints();
         h_r3->generate_r1cs_constraints();
     }
+
+    // The witness is simply the assignment to all the variables, including input, output and internal 
+    // variables
     void generate_r1cs_witness(const bit_vector &h1,
                                const bit_vector &h2,
                                const bit_vector &h3,
@@ -255,26 +246,34 @@ public:
         r2_var->bits.fill_with_bits(this->pb, r2);
         r3_var->bits.fill_with_bits(this->pb, r3);
         
-        size_t NN = sha256_digest_len/2;
+        size_t NN = sha256_digest_len/2; // 128
         
+        // Step 1:
+
+        // The values intermediate_val1, intermediate_val2 and intermediate_val3 need to be filled with
+        // the decimal values of r1, r2 and r3, which are big-endian, binary encoded.
+        //
+        // The values stored in intermediate_val1, intermediate_val2 and intermediate_val3 as well as 
+        // r1_var, r2_var and r3_var will be used to "run" against the constraints generated by the 
+        // call to generate_r1cs_constraints()
+
         std::vector<FieldT> interm1(NN);
         std::vector<FieldT> interm2(NN);
         std::vector<FieldT> interm3(NN);
 
-        interm1[0] = r1[0] ? FieldT::one() : FieldT::zero();
-        interm2[0] = r2[0] ? FieldT::one() : FieldT::zero();
-        interm3[0] = r3[0] ? FieldT::one() : FieldT::zero();
+        // <------------- TODO start -------------------->
 
-        for (size_t i=1; i<NN; i++) {
-          interm1[i] = interm1[i-1] * 2 + (r1[i] ? FieldT::one() : FieldT::zero());
-          interm2[i] = interm2[i-1] * 2 + (r2[i] ? FieldT::one() : FieldT::zero());
-          interm3[i] = interm3[i-1] * 2 + (r3[i] ? FieldT::one() : FieldT::zero());
-        }
+
+        // <------------- TODO end -------------------->
 
         intermediate_val1.fill_with_field_elements(this->pb, interm1);
         intermediate_val2.fill_with_field_elements(this->pb, interm2);
         intermediate_val3.fill_with_field_elements(this->pb, interm3);
 
+        cout << "intermediate_val1[NN-1]: " << intermediate_val1.get_vals(this->pb)[NN-1] << endl;
+        cout << "intermediate_val2[NN-1]: " << intermediate_val2.get_vals(this->pb)[NN-1] << endl;
+        cout << "intermediate_val3[NN-1]: " << intermediate_val3.get_vals(this->pb)[NN-1] << endl;
+        
         // Set the zero pb_variable to zero
         this->pb.val(zero) = FieldT::zero();
 

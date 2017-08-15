@@ -15,6 +15,10 @@ int main()
     // Generate the verifying/proving keys. (This is trusted setup!)
     auto keypair = generate_keypair<default_r1cs_ppzksnark_pp>();
 
+    cout << "-----------Verification key start-----------" << endl;
+    cout << keypair.vk << endl;
+    cout << "-----------Verification key end-------------" << endl;
+
     // Run test vectors.
     assert(run_test(keypair, false, false, false));
     //assert(!run_test(keypair, true, false, false));
@@ -39,105 +43,15 @@ bool run_test(r1cs_ppzksnark_keypair<default_r1cs_ppzksnark_pp>& keypair,
     std::vector<bool> r3_bv(256);
 
     {
-        // These are working test vectors.
-        h1_bv = int_list_to_bits({78,152,
-  23,
-  135,
-  180,
-  61,
-  171,
-  123,
-  58,
-  147,
-  215,
-  200,
-  83,
-  7,
-  198,
-  244,
-  58,
-  26,
-  58,
-  88,
-  150,
-  57,
-  69,
-  185,
-  62,
-  165,
-  253,
-  53,
-  112,
-  69, 80, 23}, 8);
-        h2_bv = int_list_to_bits({182,
-  169,
-  95,
-  91,
-  248,
-  154,
-  156,
-  163,
-  104,
-  18,
-  251,
-  174,
-  68,
-  251,
-  237,
-  249,
-  215,
-  166,
-  135,
-  222,
-  50,
-  133,
-  48,
-  197,
-  197,
-  205,
-  182,
-  20,
-  56,
-  166,
-  108,
-  66}, 8);
-        h3_bv = int_list_to_bits({101,
-  119,
-  48,
-  144,
-  165,
-  169,
-  249,
-  100,
-  249,
-  74,
-  13,
-  126,
-  39,
-  34,
-  64,
-  47,
-  238,
-  173,
-  29,
-  72,
-  31,
-  203,
-  7,
-  100,
-  179,
-  20,
-  220,
-  66,
-  172,
-  97,
-  252,
-  223}, 8);
-        // r = (num, salt)
-        // Constraint is num3 = num1 + num2
-        r1_bv = int_list_to_bits({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 203, 6, 191, 16, 141, 210, 73, 136, 65, 136, 152, 60, 117, 24, 101, 18}, 8);
-        r2_bv = int_list_to_bits({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 6, 178, 210, 43, 243, 10, 217, 251, 246, 248, 0, 21, 86, 194, 100, 94}, 8);
-        r3_bv = int_list_to_bits({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 203, 6, 191, 16, 141, 210, 73, 136, 65, 136, 152, 60, 117, 24, 101, 18}, 8);
+        // These are working test vectors. These vectors are 256 bits, where they are broken into
+        // 32 x 8bit words. Each word is therefore respresented by an int ranging from 0 to 255.
+        r1_bv = int_list_to_bits({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 202, 5, 190, 15, 140, 211, 75, 131, 62, 136, 12, 6, 17, 4, 10, 18}, 8);
+        r2_bv = int_list_to_bits({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 6, 171, 218, 43, 241, 15, 217, 251, 205, 248, 0, 21, 86, 194, 100, 94}, 8);
+        r3_bv = int_list_to_bits({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 200, 1, 111, 160, 141, 10, 73, 36, 65, 16, 15, 6, 17, 2, 11, 8}, 8);
+        // These are the sha256 hashes of r1, r2 and r3, also encoded in 32 x 8bit words. 
+        h1_bv = int_list_to_bits({ 160, 95, 223, 120, 235, 188, 124, 111, 249, 78, 150, 221, 176, 18, 80, 39, 110, 174, 229, 79, 245, 125, 150, 234, 56, 106, 169, 104, 162, 33, 24, 153 }, 8);
+        h2_bv = int_list_to_bits({ 161, 80, 151, 234, 94, 112, 26, 194, 211, 119, 229, 43, 151, 101, 159, 178, 59, 159, 64, 75, 24, 52, 126, 186, 38, 96, 213, 158, 190, 38, 112, 98 }, 8);
+        h3_bv = int_list_to_bits({ 207, 66, 31, 102, 153, 84, 53, 105, 85, 76, 157, 56, 40, 35, 153, 34, 113, 21, 99, 253, 21, 174, 153, 8, 43, 60, 78, 229, 87, 25, 177, 165 }, 8);
     }
 
     if (swap_r1_r2) {
@@ -162,8 +76,14 @@ bool run_test(r1cs_ppzksnark_keypair<default_r1cs_ppzksnark_pp>& keypair,
             return verify_proof(keypair.vk, *proof, h2_bv, h1_bv, h3_bv);
         } else {
             // verification should not fail if the proof is generated!
-            assert(verify_proof(keypair.vk, *proof, h1_bv, h2_bv, h3_bv));
-            return true;
+            bool result = verify_proof(keypair.vk, *proof, h1_bv, h2_bv, h3_bv);
+            if(result){
+              cout << "Proof was verified!" << endl;
+            } else {
+              cout << "Proof could not be verified!" << endl;
+            }
+            assert(result);
+            return result;
         }
     }
 }
