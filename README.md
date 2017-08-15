@@ -6,7 +6,7 @@ Alice wants to prove to Bob that she knows the values r1, r2 and r3 which hash t
 However, Alice doesn't want to tell Bob the values of r1, r2 and r3. In an attempt to convice Bob that she knows the values for r1, r2 and r3, she mentions that r1 + r2 = r3.
 
 Bob decided that the only way he can know for sure if Alice is telling the truth is if he constructs a zero knowledge circuit + proving key. Bob will then ask Alice to prove 
-that she knows the values of r1, r2 and r3 by requesting her to construct a zero knowledge proof  + verification key.
+that she knows the values of r1, r2 and r3 by requesting her to construct a zero knowledge proof.
 
 Construct such a system for Bob. The system needs to take as input three values and their SHA256 hashes. The system will then generate a proof that the three values do hash to the 
 given hashes, as well as that value1 + value2 = value3.
