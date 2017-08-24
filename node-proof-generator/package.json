@@ -1,7 +1,7 @@
 {
   "name": "node-proof-generator",
   "version": "1.0.0",
-  "description": "Proof Generator written in node (for project Ubin)",
+  "description": "Proof Generator written in node",
   "main": "index.js",
   "dependencies": {},
   "devDependencies": {},
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://bitbucket.org/petermunnings/zkp.git"
+    "url": "git+https://github.com/ConsenSys/zero-knowledge-proofs.git"
   },
   "keywords": [
     "zero",
@@ -19,6 +19,6 @@
     "proof"
   ],
   "author": "Peter Munnings",
-  "license": "ISC",
-  "homepage": "https://bitbucket.org/petermunnings/zkp#readme"
+  "license": "Apache 2",
+  "homepage": "https://github.com/ConsenSys/zero-knowledge-proofs"
 }
