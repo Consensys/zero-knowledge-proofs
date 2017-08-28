@@ -7,7 +7,7 @@
 
 set -e
 
-LIBSNARK_SRC=${LIBSNARK_SRC:-https://github.com/scipr-lab/libsnark}
+LIBSNARK_SRC=${LIBSNARK_SRC:-https://github.com/scipr-lab/libsnark.git}
 
 CURVE=${CURVE:-BN128}
 
