@@ -1,5 +1,5 @@
 #include "libsnark/gadgetlib1/gadgets/hashes/sha256/sha256_gadget.hpp"
-#include "libff/algebra/fields/field_utils.hpp"
+#include "algebra/fields/field_utils.hpp"
 
 const size_t sha256_digest_len = 256;
 
@@ -76,7 +76,7 @@ public:
         {
             // We use a "multipacking" technique which allows us to constrain
             // the input bits in as few field elements as possible.
-            const size_t input_size_in_field_elements = libff::div_ceil(input_size_in_bits, FieldT::capacity());
+            const size_t input_size_in_field_elements = div_ceil(input_size_in_bits, FieldT::capacity());
 
             std::cout << "**************** input_size_in_field_elements: " << input_size_in_field_elements << "\n";
             std::cout << "**************** FieldT::capacity(): " << FieldT::capacity() << "\n";
@@ -242,12 +242,12 @@ public:
         h_r2->generate_r1cs_constraints();
         h_r3->generate_r1cs_constraints();
     }
-    void generate_r1cs_witness(const libff::bit_vector &h1,
-                               const libff::bit_vector &h2,
-                               const libff::bit_vector &h3,
-                               const libff::bit_vector &r1,
-                               const libff::bit_vector &r2,
-                               const libff::bit_vector &r3
+    void generate_r1cs_witness(const bit_vector &h1,
+                               const bit_vector &h2,
+                               const bit_vector &h3,
+                               const bit_vector &r1,
+                               const bit_vector &r2,
+                               const bit_vector &r3
                               )
     {
         // Fill our digests with our witnessed data
@@ -291,9 +291,9 @@ public:
 };
 
 template<typename FieldT>
-r1cs_primary_input<FieldT> l_input_map(const libff::bit_vector &h1,
-                                             const libff::bit_vector &h2,
-                                             const libff::bit_vector &h3
+r1cs_primary_input<FieldT> l_input_map(const bit_vector &h1,
+                                             const bit_vector &h2,
+                                             const bit_vector &h3
                                             )
 {
     // Construct the multipacked field points which encode
@@ -305,11 +305,11 @@ r1cs_primary_input<FieldT> l_input_map(const libff::bit_vector &h1,
 
     std::cout << "**** After assert(size() == sha256_digest_len) *****" << std::endl;
 
-    libff::bit_vector input_as_bits;
+    bit_vector input_as_bits;
     input_as_bits.insert(input_as_bits.end(), h1.begin(), h1.end());
     input_as_bits.insert(input_as_bits.end(), h2.begin(), h2.end());
     input_as_bits.insert(input_as_bits.end(), h3.begin(), h3.end());
-    std::vector<FieldT> input_as_field_elements = libff::pack_bit_vector_into_field_element_vector<FieldT>(input_as_bits);
+    std::vector<FieldT> input_as_field_elements = pack_bit_vector_into_field_element_vector<FieldT>(input_as_bits);
 
     std::cout << "**** After pack_bit_vector_into_field_element_vector *****" << std::endl;
 

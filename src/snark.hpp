@@ -1,7 +1,7 @@
 #include "libsnark/gadgetlib1/gadgets/basic_gadgets.hpp"
 #include "libsnark/zk_proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp"
 #include "libsnark/common/default_types/r1cs_ppzksnark_pp.hpp"
-#include "libff/common/utils.hpp"
+#include "libsnark/common/utils.hpp"
 #include <boost/optional.hpp>
 
 using namespace libsnark;
@@ -12,7 +12,7 @@ using namespace std;
 template<typename ppzksnark_ppT>
 r1cs_ppzksnark_keypair<ppzksnark_ppT> generate_keypair()
 {
-    typedef libff::Fr<ppzksnark_ppT> FieldT;
+    typedef Fr<ppzksnark_ppT> FieldT;
 
     protoboard<FieldT> pb;
     l_gadget<FieldT> g(pb);
@@ -26,15 +26,15 @@ r1cs_ppzksnark_keypair<ppzksnark_ppT> generate_keypair()
 
 template<typename ppzksnark_ppT>
 boost::optional<r1cs_ppzksnark_proof<ppzksnark_ppT>> generate_proof(r1cs_ppzksnark_proving_key<ppzksnark_ppT> proving_key,
-                                                                   const libff::bit_vector &h1,
-                                                                   const libff::bit_vector &h2,
-                                                                   const libff::bit_vector &h3,
-                                                                   const libff::bit_vector &r1,
-                                                                   const libff::bit_vector &r2,
-                                                                   const libff::bit_vector &r3
+                                                                   const bit_vector &h1,
+                                                                   const bit_vector &h2,
+                                                                   const bit_vector &h3,
+                                                                   const bit_vector &r1,
+                                                                   const bit_vector &r2,
+                                                                   const bit_vector &r3
                                                                    )
 {
-    typedef libff::Fr<ppzksnark_ppT> FieldT;
+    typedef Fr<ppzksnark_ppT> FieldT;
 
     protoboard<FieldT> pb;
     l_gadget<FieldT> g(pb);
@@ -52,12 +52,12 @@ boost::optional<r1cs_ppzksnark_proof<ppzksnark_ppT>> generate_proof(r1cs_ppzksna
 template<typename ppzksnark_ppT>
 bool verify_proof(r1cs_ppzksnark_verification_key<ppzksnark_ppT> verification_key,
                   r1cs_ppzksnark_proof<ppzksnark_ppT> proof,
-                  const libff::bit_vector &h1,
-                  const libff::bit_vector &h2,
-                  const libff::bit_vector &h3
+                  const bit_vector &h1,
+                  const bit_vector &h2,
+                  const bit_vector &h3
                  )
 {
-    typedef libff::Fr<ppzksnark_ppT> FieldT;
+    typedef Fr<ppzksnark_ppT> FieldT;
 
     const r1cs_primary_input<FieldT> input = l_input_map<FieldT>(h1, h2, h3);
 
