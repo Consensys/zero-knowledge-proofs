@@ -7,7 +7,7 @@
 
 set -e
 
-LIBSNARK_SRC=${LIBSNARK_SRC:-https://github.com/scipr-lab/libsnark origin depreciated-master}
+LIBSNARK_SRC=${LIBSNARK_SRC:-https://github.com/scipr-lab/libsnark}
 
 CURVE=${CURVE:-BN128}
 
@@ -30,6 +30,7 @@ cd $DEPSRC
 [ ! -d libsnark ] && git clone $LIBSNARK_SRC libsnark
 cd libsnark
 git pull
+git checkout deprecated-master
 if [ "$CURVE" == "BN128" ]; then
     # TODO: submit -fPIC patch to ate-pairing
     INC_DIR=-fPIC ./prepare-depends.sh
