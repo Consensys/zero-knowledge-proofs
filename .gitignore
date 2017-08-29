@@ -3,4 +3,6 @@ test
 *.d
 depinst
 depsrc
+*.swp
+libsnark
 

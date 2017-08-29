@@ -1,40 +1,28 @@
 #!/bin/bash
-# To pass options options to libsnark Makefile, put them in env var LIBSNARK_FLAGS.
-# To clone libsnark from an alternate location, set env var LIBSNARK_SRC. For example:
-#  LIBSNARK_SRC="$HOME/libsnark.git --branch master" ./get-libsnark
-# To use curve ALT_BN128 instead of BN128 (which is x64-only), use:
-#  CURVE=ALT_BN128 ./get-libsnark
-
 set -e
-
-LIBSNARK_SRC=${LIBSNARK_SRC:-https://github.com/scipr-lab/libsnark.git}
-
-CURVE=${CURVE:-BN128}
-
-LIBSNARK_FLAGS="$LIBSNARK_FLAGS NO_SUPERCOP=1 NO_GTEST=1 NO_DOCS=1 CURVE=$CURVE"
-if [[ `uname -s` == "Darwin" ]]; then
-    LIBSNARK_FLAGS="$LIBSNARK_FLAGS NO_PROCPS=1"
-fi
-
 set -x
 
-DEPSRC=./depsrc
-DEPINST=./depinst
-
-mkdir -p $DEPINST
-DEPINST=`pwd -P`/$DEPINST  # remember absolute path
-
-mkdir -p $DEPSRC
-cd $DEPSRC
-
+LIBSNARK_FLAGS="-DUSE_ASM=ON -DCURVE=ALT_BN128 -DWITH_PROCPS=OFF -DWITH_SUPERCOP=OFF -DBINARY_OUTPUT=OFF"
+LIBFQFFT_SRC=${LIBFQFFT_SRC:-https://github.com/scipr-lab/libfqfft.git}
+LIBSNARK_SRC=${LIBSNARK_SRC:-https://github.com/scipr-lab/libsnark.git}
 [ ! -d libsnark ] && git clone $LIBSNARK_SRC libsnark
-cd libsnark
+cd libsnark 
 git pull
-git checkout deprecated-master
-if [ "$CURVE" == "BN128" ]; then
-    # TODO: submit -fPIC patch to ate-pairing
-    INC_DIR=-fPIC ./prepare-depends.sh
-fi
-make clean
-make lib $LIBSNARK_FLAGS
-make install PREFIX=$DEPINST $LIBSNARK_FLAGS
+git submodule init && git submodule update
+[ ! -d build ] && mkdir build 
+cd build && cmake $LIBSNARK_FLAGS ..
+make
+[ ! -d install ] && mkdir install 
+DESTDIR=./install make install 
+cd ..
+[ ! -d libfqfft ] && git clone $LIBFQFFT_SRC libfqfft
+cd libfqfft
+git pull
+git submodule init && git submodule update
+[ ! -d build ] && mkdir build 
+cd build 
+[ ! -d install ] && mkdir install 
+cmake .. -DCMAKE_INSTALL_PREFIX=./install
+make
+make install
+
