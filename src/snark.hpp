@@ -1,7 +1,7 @@
 #include "libsnark/gadgetlib1/gadgets/basic_gadgets.hpp"
 #include "libsnark/zk_proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp"
 #include "libsnark/common/default_types/r1cs_ppzksnark_pp.hpp"
-#include "libsnark/common/utils.hpp"
+#include "libff/common/utils.hpp"
 #include <boost/optional.hpp>
 
 using namespace libsnark;
