@@ -40,7 +40,7 @@ bool run_test(r1cs_ppzksnark_keypair<default_r1cs_ppzksnark_pp>& keypair,
 
     {
         // These are working test vectors.
-        h1_bv = int_list_to_bits({78,152,
+        h1_bv = libff::int_list_to_bits({78,152,
   23,
   135,
   180,
@@ -69,7 +69,7 @@ bool run_test(r1cs_ppzksnark_keypair<default_r1cs_ppzksnark_pp>& keypair,
   53,
   112,
   69, 80, 23}, 8);
-        h2_bv = int_list_to_bits({182,
+        h2_bv = libff::int_list_to_bits({182,
   169,
   95,
   91,
@@ -101,7 +101,7 @@ bool run_test(r1cs_ppzksnark_keypair<default_r1cs_ppzksnark_pp>& keypair,
   166,
   108,
   66}, 8);
-        h3_bv = int_list_to_bits({101,
+        h3_bv = libff::int_list_to_bits({101,
   119,
   48,
   144,
@@ -135,9 +135,9 @@ bool run_test(r1cs_ppzksnark_keypair<default_r1cs_ppzksnark_pp>& keypair,
   223}, 8);
         // r = (num, salt)
         // Constraint is num3 = num1 + num2
-        r1_bv = int_list_to_bits({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 203, 6, 191, 16, 141, 210, 73, 136, 65, 136, 152, 60, 117, 24, 101, 18}, 8);
-        r2_bv = int_list_to_bits({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 6, 178, 210, 43, 243, 10, 217, 251, 246, 248, 0, 21, 86, 194, 100, 94}, 8);
-        r3_bv = int_list_to_bits({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 203, 6, 191, 16, 141, 210, 73, 136, 65, 136, 152, 60, 117, 24, 101, 18}, 8);
+        r1_bv = libff::int_list_to_bits({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 203, 6, 191, 16, 141, 210, 73, 136, 65, 136, 152, 60, 117, 24, 101, 18}, 8);
+        r2_bv = libff::int_list_to_bits({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 6, 178, 210, 43, 243, 10, 217, 251, 246, 248, 0, 21, 86, 194, 100, 94}, 8);
+        r3_bv = libff::int_list_to_bits({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 203, 6, 191, 16, 141, 210, 73, 136, 65, 136, 152, 60, 117, 24, 101, 18}, 8);
     }
 
     if (swap_r1_r2) {
