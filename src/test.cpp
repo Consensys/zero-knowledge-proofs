@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <iostream>
+#include <fstream>
 #include <boost/optional/optional_io.hpp>
+#include <typeinfo>
 
 #include "snark.hpp"
 #include "test.h"
@@ -10,10 +12,57 @@ using namespace std;
 
 int main()
 {
+    ifstream pkFile("proverKey");
+    ifstream vkFile("verifierKey");
+
+    r1cs_ppzksnark_keypair<default_r1cs_ppzksnark_pp> keypair;
     // Initialize the curve parameters.
     default_r1cs_ppzksnark_pp::init_public_params();
     // Generate the verifying/proving keys. (This is trusted setup!)
-    auto keypair = generate_keypair<default_r1cs_ppzksnark_pp>();
+    keypair = generate_keypair<default_r1cs_ppzksnark_pp>();
+
+    cout << "verifier key before:" << endl;
+    cout << keypair.vk << endl;
+
+    if(!pkFile.good() || !vkFile.good()) {
+      stringstream proverKey;
+      proverKey << keypair.pk;
+
+      ofstream pOut;
+      pOut.open("proverKey");
+
+      pOut << proverKey.rdbuf();
+      pOut.close();
+
+      stringstream verifierKey;
+      verifierKey << keypair.vk;
+
+      ofstream vOut;
+      vOut.open("verifierKey");
+
+      vOut << verifierKey.rdbuf();
+      vOut.close();
+    } else {
+      ifstream pIn("proverKey");
+      stringstream proverKeyFromFile;
+      if (pIn) {
+         proverKeyFromFile << pIn.rdbuf();    
+         pIn.close();
+      }
+
+      proverKeyFromFile >> keypair.pk;
+
+      ifstream vIn("verifierKey");
+      stringstream verifierKeyFromFile;
+      if (vIn) {
+         verifierKeyFromFile << vIn.rdbuf();    
+         vIn.close();
+      }
+
+      verifierKeyFromFile >> keypair.vk;
+      cout << "verifier key after:" << endl;
+      cout << keypair.vk << endl;
+    }
 
     // Run test vectors.
     assert(run_test(keypair, false, false, false));
