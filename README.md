@@ -28,13 +28,13 @@ Code based on <https://github.com/ebfull/lightning_circuit>.
 `./get-libsnark && make`
 
 ### Running  
-*Generate the keypair (proving key and verification key)*
+**Generate the keypair (proving key and verification key)**  
 `./generateKeyPair`
 
-*Generate the proof*
+**Generate the proof**  
 `./generateProof`
 
-*Verify the proof*
+**Verify the proof**  
 `./verifyProof`
 
 ## anatomy
