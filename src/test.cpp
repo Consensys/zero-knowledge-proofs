@@ -8,18 +8,21 @@
 using namespace libsnark;
 using namespace std;
 
-int main()
+int main(int argc, char *argv[])
 {
     // Initialize the curve parameters.
     default_r1cs_ppzksnark_pp::init_public_params();
     // Generate the verifying/proving keys. (This is trusted setup!)
     auto keypair = generate_keypair<default_r1cs_ppzksnark_pp>();
 
+    cout << "keypair.vk|start:" << keypair.vk << ":end" << endl;
+
     // Run test vectors.
     assert(run_test(keypair, false, false, false));
     //assert(!run_test(keypair, true, false, false));
     //assert(!run_test(keypair, false, true, false));
     //assert(!run_test(keypair, false, false, true));
+  return 0;
 }
 
 bool run_test(r1cs_ppzksnark_keypair<default_r1cs_ppzksnark_pp>& keypair,

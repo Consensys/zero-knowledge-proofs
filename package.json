@@ -1,0 +1,22 @@
+{
+  "name": "zero-knowledge-proofs",
+  "version": "0.0.1",
+  "description": "Zero Knowledge Proofs and how they can be implemented in Quorum",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ConsenSys/zero-knowledge-proofs.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ConsenSys/zero-knowledge-proofs/issues"
+  },
+  "homepage": "https://github.com/ConsenSys/zero-knowledge-proofs#readme"
+}

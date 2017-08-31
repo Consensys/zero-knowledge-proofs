@@ -5,4 +5,10 @@ depinst
 depsrc
 *.swp
 libsnark
+verifyProof
+verifierKey
+proverKey
+proof
+generateKeyPair
+generateProof
 
