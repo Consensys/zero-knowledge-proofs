@@ -27,9 +27,15 @@ Code based on <https://github.com/ebfull/lightning_circuit>.
 
 `./get-libsnark && make`
 
-### Running
+### Running  
+**Generate the keypair (proving key and verification key)**  
+`./generateKeyPair`
 
-`./test`
+**Generate the proof**  
+`./generateProof`
+
+**Verify the proof**  
+`./verifyProof`
 
 ## anatomy
 
