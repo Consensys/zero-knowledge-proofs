@@ -12,7 +12,7 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-  std::string keyFileName = "proverKey";
+  std::string keyFileName = "provingKey";
 
   // Initialize the curve parameters.
   default_r1cs_ppzksnark_pp::init_public_params();
@@ -20,13 +20,13 @@ int main(int argc, char *argv[])
   r1cs_ppzksnark_proving_key<default_r1cs_ppzksnark_pp> provingKey_in;
 
   ifstream fileIn(keyFileName);
-  stringstream proverKeyFromFile;
+  stringstream provingKeyFromFile;
   if (fileIn) {
-     proverKeyFromFile << fileIn.rdbuf();
+     provingKeyFromFile << fileIn.rdbuf();
      fileIn.close();
   }
  
-  proverKeyFromFile >> provingKey_in;
+  provingKeyFromFile >> provingKey_in;
  
   // Initialize bit_vectors for all of the variables involved.
   std::vector<bool> h1_bv(256);

@@ -13,17 +13,17 @@ int main(int argc, char *argv[])
   // Initialize the curve parameters.
   default_r1cs_ppzksnark_pp::init_public_params();
 
-  // Read verifier key in from file
-  r1cs_ppzksnark_verification_key<default_r1cs_ppzksnark_pp> verifierKey_in;
-  ifstream fileIn("verifierKey");
-  stringstream verifierKeyFromFile;
+  // Read verification key in from file
+  r1cs_ppzksnark_verification_key<default_r1cs_ppzksnark_pp> verificationKey_in;
+  ifstream fileIn("verificationKey");
+  stringstream verificationKeyFromFile;
   if (fileIn) {
-     verifierKeyFromFile << fileIn.rdbuf();
+     verificationKeyFromFile << fileIn.rdbuf();
      fileIn.close();
   }
-  verifierKeyFromFile >> verifierKey_in;
+  verificationKeyFromFile >> verificationKey_in;
 
-  cout << "verifierKey_in" << verifierKey_in << endl;
+  cout << "verificationKey_in" << verificationKey_in << endl;
   
   // Read proof in from file
   //libsnark::r1cs_ppzksnark_proof<libff::alt_bn128_pp> proof_in;
@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
   h3_bv = int_list_to_bits({101, 119, 48, 144, 165, 169, 249, 100, 249, 74, 13, 126, 39, 34, 64, 47, 238, 173, 29, 72, 31, 203, 7, 100, 179, 20, 220, 66, 172, 97, 252, 223}, 8);
  
   // Verify the proof
-  bool isVerified = verify_proof(verifierKey_in, *proof_in, h1_bv, h2_bv, h3_bv);
+  bool isVerified = verify_proof(verificationKey_in, *proof_in, h1_bv, h2_bv, h3_bv);
 
   if(isVerified){
     cout << "Proof was verified!!" << endl;

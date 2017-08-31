@@ -6,8 +6,8 @@ depsrc
 *.swp
 libsnark
 verifyProof
-verifierKey
-proverKey
+verificationKey
+provingKey
 proof
 generateKeyPair
 generateProof
