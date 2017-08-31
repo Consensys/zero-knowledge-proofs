@@ -15,11 +15,10 @@ int main()
     ifstream pkFile("proverKey");
     ifstream vkFile("verifierKey");
 
-    r1cs_ppzksnark_keypair<default_r1cs_ppzksnark_pp> keypair;
     // Initialize the curve parameters.
     default_r1cs_ppzksnark_pp::init_public_params();
     // Generate the verifying/proving keys. (This is trusted setup!)
-    keypair = generate_keypair<default_r1cs_ppzksnark_pp>();
+    r1cs_ppzksnark_keypair<default_r1cs_ppzksnark_pp> keypair = generate_keypair<default_r1cs_ppzksnark_pp>();
 
     cout << "verifier key before:" << endl;
     cout << keypair.vk << endl;
