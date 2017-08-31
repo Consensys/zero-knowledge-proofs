@@ -10,7 +10,7 @@
 using namespace libsnark;
 using namespace std;
 
-int main()
+int main(int argc, char *argv[])
 {
     ifstream pkFile("proverKey");
     ifstream vkFile("verifierKey");
@@ -63,11 +63,14 @@ int main()
       cout << keypair.vk << endl;
     }
 
+    cout << "keypair.vk|start:" << keypair.vk << ":end" << endl;
+
     // Run test vectors.
     assert(run_test(keypair, false, false, false));
     //assert(!run_test(keypair, true, false, false));
     //assert(!run_test(keypair, false, true, false));
     //assert(!run_test(keypair, false, false, true));
+  return 0;
 }
 
 bool run_test(r1cs_ppzksnark_keypair<default_r1cs_ppzksnark_pp>& keypair,
