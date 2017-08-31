@@ -18,8 +18,8 @@ all:
 	$(CXX) -o generateProof generateProof.o $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
 	$(CXX) -o verifyProof.o src/verifyProof.cpp -c $(CXXFLAGS) $(LIBSNARK_FLAGS) $(OPTFLAGS)
 	$(CXX) -o verifyProof verifyProof.o $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
-	$(CXX) -o test.o src/test.cpp -c $(CXXFLAGS) $(LIBSNARK_FLAGS) $(OPTFLAGS)
-	$(CXX) -o test test.o $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
+#	$(CXX) -o test.o src/test.cpp -c $(CXXFLAGS) $(LIBSNARK_FLAGS) $(OPTFLAGS)
+#	$(CXX) -o test test.o $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
 
 clean:
 	$(RM) test.o test

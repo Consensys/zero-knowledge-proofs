@@ -22,9 +22,14 @@ int main(int argc, char *argv[])
      fileIn.close();
   }
   verifierKeyFromFile >> verifierKey_in;
+
+  cout << "verifierKey_in" << verifierKey_in << endl;
   
   // Read proof in from file
-  boost::optional<r1cs_ppzksnark_proof<ppzksnark_ppT>> proof_in;
+  //libsnark::r1cs_ppzksnark_proof<libff::alt_bn128_pp> proof_in;
+  boost::optional<libsnark::r1cs_ppzksnark_proof<libff::alt_bn128_pp>> proof_in;
+  //r1cs_ppzksnark_proof<default_r1cs_ppzksnark_pp> proof_in;
+  
   ifstream proofFileIn("proof");
   stringstream proofFromFile;
   if (proofFileIn) {
@@ -42,10 +47,14 @@ int main(int argc, char *argv[])
   h3_bv = int_list_to_bits({101, 119, 48, 144, 165, 169, 249, 100, 249, 74, 13, 126, 39, 34, 64, 47, 238, 173, 29, 72, 31, 203, 7, 100, 179, 20, 220, 66, 172, 97, 252, 223}, 8);
  
   // Verify the proof
-  //bool isVerified = verify_proof(verifierKey_in, proof_in, h1_bv, h2_bv, h3_bv);
-  
-  //cout << "isVerified:" << isVerified << endl;
-  
+  bool isVerified = verify_proof(verifierKey_in, *proof_in, h1_bv, h2_bv, h3_bv);
+
+  if(isVerified){
+    cout << "Proof was verified!!" << endl;
+  } else {
+    cout << "Proof was not verified!!" << endl;
+  }
+
   return 0;
 }
 

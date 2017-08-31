@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <boost/optional/optional_io.hpp>
+#include <boost/optional.hpp>
 #include <fstream>
 
 #include "snark.hpp"
@@ -47,7 +48,7 @@ int main(int argc, char *argv[])
     r3_bv = int_list_to_bits({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 203, 6, 191, 16, 141, 210, 73, 136, 65, 136, 152, 60, 117, 24, 101, 18}, 8);
   }
 
-  auto proof = generate_proof<default_r1cs_ppzksnark_pp>(provingKey_in, h1_bv, h2_bv, h3_bv, r1_bv, r2_bv, r3_bv);
+  boost::optional<libsnark::r1cs_ppzksnark_proof<libff::alt_bn128_pp>> proof = generate_proof<default_r1cs_ppzksnark_pp>(provingKey_in, h1_bv, h2_bv, h3_bv, r1_bv, r2_bv, r3_bv);
 
   stringstream proofStream;
   proofStream << proof;
@@ -57,6 +58,21 @@ int main(int argc, char *argv[])
 
   fileOut << proofStream.rdbuf();
   fileOut.close();
+/*
+  // Read verifier key in from file
+  r1cs_ppzksnark_verification_key<default_r1cs_ppzksnark_pp> verifierKey_in;
+  ifstream verifierFileIn("verifierKey");
+  stringstream verifierKeyFromFile;
+  if (verifierFileIn) {
+     verifierKeyFromFile << verifierFileIn.rdbuf();
+     verifierFileIn.close();
+  }
+  verifierKeyFromFile >> verifierKey_in;
 
-  return true;
+  // Verify the proof
+  bool isVerified = verify_proof(verifierKey_in, *proof, h1_bv, h2_bv, h3_bv);
+
+  cout << "isVerified: " << isVerified << endl;
+*/
+  return 0;
 }
