@@ -1,35 +1,71 @@
-const spawn = require( 'child_process' ).spawn
-const generateKeyPair = spawn( './generateKeyPair')
-const test = spawn( './test')
+var prompt = require('prompt');
 
-const startOfVerificationKey = 'keypair.vk|start:'
-const startOfProverKey = 'keypair.pk|start:'
-const endOfKey = ':end'
+const {exec} = require( 'child_process' )
 
-let verificationKey = null
-let proverKey = null
+function handleGenerateKeyPair(cb){
 
-generateKeyPair.stdout.on( 'data', data => {
-  let startIndex = data.toString().indexOf(startOfVerificationKey)
-  if(startIndex > 0){ 
-    let endIndex = data.toString().indexOf(endOfKey);
-    verificationKey = data.toString().substring(startIndex+startOfVerificationKey.length, endIndex)
-    console.log('verificationKey.length:', verificationKey.length)
-  }
+  exec('./generateKeyPair', (error, stdout, stderr) => {
+    if (error) {
+      console.error(`exec error: ${error}`);
+      return;
+    }
+    console.log(`stdout: ${stdout}`);
+    console.log(`stderr: ${stderr}`);
+    cb()
+  });
 
-  startIndex = data.toString().indexOf(startOfProverKey)
-  console.log('data:', data.toString())
-  if(startIndex > 0){ 
-    let endIndex = data.toString().indexOf(endOfKey);
-    proverKey = data.toString().substring(startIndex+startOfProverKey.length, endIndex)
-    console.log('proverKey.length:', proverKey.length)
-  }
-});
+}
 
-generateKeyPair.stderr.on( 'data', data => {
-  console.log( `stderr: ${data}` )
-});
+function handleGenerateProof(cb){
+  console.log('Loading Proving Key from file... (this takes a few seconds)')
+  exec('./generateProof', (error, stdout, stderr) => {
+    console.log(`stdout: ${stdout}`);
+    if (error) {
+      console.error(`exec error: ${error}`);
+      console.log('The proof generation failed\n\n');
+    }
+    if(stderr){
+      console.log(`stderr: ${stderr}`);
+      console.log('The proof generation failed\n\n');
+    }
+    cb()
+  });
+}
 
-generateKeyPair.on( 'close', code => {
-  console.log( `child process exited with code ${code}` )
-});
+function handleVerifyProof(cb){
+  exec('./verifyProof', (error, stdout, stderr) => {
+    console.log(`stdout: ${stdout}`);
+    if (error) {
+      console.error(`exec error: ${error}`);
+      console.log('The proof verification failed\n\n');
+    }
+    if(stderr){
+      console.log(`stderr: ${stderr}`);
+      console.log('The proof verification failed\n\n');
+    }
+    cb()
+  });
+}
+
+function handleInput(){
+  console.log('Please select an option:\n1) Create a new key pair\n2) Generate a proof\n3) Verify a proof\n4) Quit')
+  prompt.get(['option'], function(err, answer){
+    if(answer.option == 1){
+      handleGenerateKeyPair(function(){
+        handleInput()
+      })
+    } else if (answer.option == 2){
+      handleGenerateProof(function(){
+        handleInput()
+      })
+    } else if(answer.option == 3){
+      handleVerifyProof(function(){
+        handleInput()
+      })
+    } else {
+      console.log('Quiting...')
+    }
+  })
+}
+
+handleInput()

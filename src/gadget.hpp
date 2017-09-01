@@ -302,6 +302,7 @@ r1cs_primary_input<FieldT> l_input_map(const bit_vector &h1,
     // Construct the multipacked field points which encode
     // the verifier's knowledge. This is the "dual" of the
     // multipacking gadget logic in the constructor.
+
     assert(h1.size() == sha256_digest_len);
     assert(h2.size() == sha256_digest_len);
     assert(h3.size() == sha256_digest_len);

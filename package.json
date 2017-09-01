@@ -18,5 +18,8 @@
   "bugs": {
     "url": "https://github.com/ConsenSys/zero-knowledge-proofs/issues"
   },
-  "homepage": "https://github.com/ConsenSys/zero-knowledge-proofs#readme"
+  "homepage": "https://github.com/ConsenSys/zero-knowledge-proofs#readme",
+  "dependencies": {
+    "prompt": "^1.0.0"
+  }
 }
