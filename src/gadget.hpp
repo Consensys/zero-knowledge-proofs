@@ -303,10 +303,6 @@ r1cs_primary_input<FieldT> l_input_map(const bit_vector &h1,
     // the verifier's knowledge. This is the "dual" of the
     // multipacking gadget logic in the constructor.
 
-    std::cout << "h1.size: " << h1.size() << std::endl;
-    std::cout << "h2.size: " << h2.size() << std::endl;
-    std::cout << "h3.size: " << h3.size() << std::endl;
-
     assert(h1.size() == sha256_digest_len);
     assert(h2.size() == sha256_digest_len);
     assert(h3.size() == sha256_digest_len);
