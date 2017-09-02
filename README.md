@@ -28,14 +28,13 @@ Code based on <https://github.com/ebfull/lightning_circuit>.
 `./get-libsnark && make`
 
 ### Running  
-**Generate the keypair (proving key and verification key)**  
-`./generateKeyPair`
+`node index.js`
 
-**Generate the proof**  
-`./generateProof`
+Follow the prompts.  
 
-**Verify the proof**  
-`./verifyProof`
+1. Generates a key pair
+2. Generates a proof
+3. Verifies the proof
 
 ## anatomy
 
