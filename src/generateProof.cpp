@@ -79,12 +79,12 @@ int main(int argc, char *argv[])
     std::vector<std::vector<unsigned long int>> values = fillValuesFromfile("inputParameters");
     h1_bv = int_list_to_bits_local(values[0], 8);
     h2_bv = int_list_to_bits_local(values[1], 8);
-    h3_bv = int_list_to_bits({101, 119, 48, 144, 165, 169, 249, 100, 249, 74, 13, 126, 39, 34, 64, 47, 238, 173, 29, 72, 31, 203, 7, 100, 179, 20, 220, 66, 172, 97, 252, 223}, 8);
+    h3_bv = int_list_to_bits_local(values[2], 8);
     // r = (num, salt)
     // Constraint is num3 = num1 + num2
-    r1_bv = int_list_to_bits_local(myNumbers, 8);
-    r2_bv = int_list_to_bits({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 6, 178, 210, 43, 243, 10, 217, 251, 246, 248, 0, 21, 86, 194, 100, 94}, 8);
-    r3_bv = int_list_to_bits({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 203, 6, 191, 16, 141, 210, 73, 136, 65, 136, 152, 60, 117, 24, 101, 18}, 8);
+    r1_bv = int_list_to_bits_local(values[3], 8);
+    r2_bv = int_list_to_bits_local(values[4], 8);
+    r3_bv = int_list_to_bits_local(values[5], 8);
   }
 
   boost::optional<libsnark::r1cs_ppzksnark_proof<libff::alt_bn128_pp>> proof = generate_proof<default_r1cs_ppzksnark_pp>(provingKey_in, h1_bv, h2_bv, h3_bv, r1_bv, r2_bv, r3_bv);
