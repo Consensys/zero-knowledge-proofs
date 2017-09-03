@@ -4,6 +4,10 @@ var fs = require('fs');
 const {exec} = require( 'child_process' )
 const sha256 = require('sha256')
 
+var sBal = 100
+var pAmount = 30
+var rBal = 50
+
 function handleExecuteProgram(programName, msgStart, msgEnd, msgError, cb){
   console.log(msgStart)
   exec(programName, (error, stdout, stderr) => {
@@ -21,7 +25,7 @@ function handleExecuteProgram(programName, msgStart, msgEnd, msgError, cb){
   });
 }
 
-function generateProofInputs(r1, r2, r3, cb){
+function generateProofInputs(r1, r2, r3, fileName, cb){
 
   //proof is that r1+r2=r3
   var arr_r1 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, r1, 202, 5, 190, 15, 140, 211, 75, 131, 62, 136, 12, 6, 17, 4, 10, 18]
@@ -46,76 +50,84 @@ function generateProofInputs(r1, r2, r3, cb){
   inputParameters += arr_r1.toString().replace(/,/g, ' ') + "\n";
   inputParameters += arr_r2.toString().replace(/,/g, ' ') + "\n";
   inputParameters += arr_r3.toString().replace(/,/g, ' ');
-  fs.writeFile('inputParameters', inputParameters, function(err) {
+  fs.writeFile(fileName, inputParameters, function(err) {
     if(err) {
       cb('An error occured generating the input parameters:',err);
     } else {
-      cb('The input parameters were succesfully generated and saved to the file: inputParameters', null);
+      cb('The input parameters were succesfully generated and saved to the file: ' + fileName, null);
     }
   }); 
 }
 
-function handleGenerateSendPaymentProof(cb){
-  console.log('Please enter your starting balance')
-  prompt.get(['option'], function(err, startingBalance){
-      console.log('Please enter the amount you are sending')
+function handleUpdateOpeningBalancesAndPaymentAmount(cb){
+  console.log('Please enter the senders starting balance')
+  prompt.get(['option'], function(err, sendersBalance){
+    console.log('Please enter the receivers starting balance')
+    prompt.get(['option'], function(err, receiversBalance){
+      console.log('Please enter the amount that is being paid')
       prompt.get(['option'], function(err, paymentAmount){
-        generateProofInputs(parseInt(startingBalance.option) - parseInt(paymentAmount.option), parseInt(paymentAmount.option), parseInt(startingBalance.option), function(msg, err){
-          if(err){
-            console.log(msg, err)
-            cb()
-          } else {
-            console.log(msg)
-            handleExecuteProgram('./generateProof', 'Loading Proving Key from file... (this takes a few seconds)', '', 'The proof generation failed\n\n', function(){
-              cb()
-            })
-          }
+        sBal = parseInt(sendersBalance.option)
+        rBal = parseInt(receiversBalance.option)
+        pAmount = parseInt(paymentAmount.option)
+        cb()
       })
     })
+  })
+}
+
+function handleGenerateSendPaymentProof(cb){
+  generateProofInputs((sBal - pAmount), pAmount, sBal, 'sendProofInputs', function(msg, err){
+    if(err){
+      console.log(msg, err)
+      cb()
+    } else {
+      console.log(msg)
+      handleExecuteProgram('./generateProof sendProof sendProofInputs', 'Loading Proving Key from file... (this takes a few seconds)', '', 'The proof generation failed\n\n', function(){
+        cb()
+      })
+    }
   })
 }
 
 function handleGenerateReceivePaymentProof(cb){
-  console.log('Please enter your starting balance')
-  prompt.get(['option'], function(err, startingBalance){
-      console.log('Please enter the amount you are receiving')
-      prompt.get(['option'], function(err, paymentAmount){
-        generateProofInputs(parseInt(startingBalance.option), parseInt(paymentAmount.option), parseInt(startingBalance.option) + parseInt(paymentAmount.option), function(msg, err){
-          if(err){
-            console.log(msg, err)
-            cb()
-          } else {
-            console.log(msg)
-            handleExecuteProgram('./generateProof', 'Loading Proving Key from file... (this takes a few seconds)', '', 'The proof generation failed\n\n', function(){
-              cb()
-            })
-          }
+  generateProofInputs(rBal, pAmount, (rBal + pAmount), 'receiveProofInputs', function(msg, err){
+    if(err){
+      console.log(msg, err)
+      cb()
+    } else {
+      console.log(msg)
+      handleExecuteProgram('./generateProof receiveProof receiveProofInputs', 'Loading Proving Key from file... (this takes a few seconds)', '', 'The proof generation failed\n\n', function(){
+        cb()
       })
-    })
+    }
   })
 }
 
 function handleInput(){
-  console.log('Please select an option:\n1) Create a new key pair\n2) Generate a send payment proof\n3) Generate a receive payment proof\n4) Verify a send payment proof\n5) Verify a receive payment proof\n0) Quit')
+  console.log('Please select an option:\n1) Update start balances and payment amount\n2) Create a new key pair\n3) Generate a send payment proof\n4) Generate a receive payment proof\n5) Verify a send payment proof\n6) Verify a receive payment proof\n0) Quit')
   prompt.get(['option'], function(err, answer){
     if(answer.option == 1){
+      handleUpdateOpeningBalancesAndPaymentAmount(function(){
+        handleInput()
+      })
+    } else if(answer.option == 2){
       handleExecuteProgram('./generateKeyPair', 'Generating key pair...', 'The key pair has been generated and the keys written to files (provingKey and verificationKey)', 'The key pair failed\n\n', function(){
         handleInput()
       })
-    } else if (answer.option == 2){
+    } else if (answer.option == 3){
       handleGenerateSendPaymentProof(function(){
         handleInput()
       })
-    } else if (answer.option == 3){
+    } else if (answer.option == 4){
       handleGenerateReceivePaymentProof(function(){
         handleInput()
       })
-    } else if(answer.option == 4){
-      handleExecuteProgram('./verifyProof', '', '', 'The proof verification failed\n\n', function(){
+    } else if(answer.option == 5){
+      handleExecuteProgram('./verifyProof sendProof sendProofInputs', '', '', 'The proof verification failed\n\n', function(){
         handleInput()
       })
-    } else if(answer.option == 5){
-      handleExecuteProgram('./verifyProof', '', '', 'The proof verification failed\n\n', function(){
+    } else if(answer.option == 6){
+      handleExecuteProgram('./verifyProof receiveProof receiveProofInputs', '', '', 'The proof verification failed\n\n', function(){
         handleInput()
       })
     } else {

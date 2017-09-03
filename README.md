@@ -30,11 +30,45 @@ Code based on <https://github.com/ebfull/lightning_circuit>.
 ### Running  
 `node index.js`
 
-Follow the prompts.  
+You will see the following menu options:  
 
-1. Generates a key pair
-2. Generates a proof
-3. Verifies the proof
+1. Update start balances and payment amount
+2. Create a new key pair
+3. Generate a send payment proof
+4. Generate a receive payment proof
+5. Verify a send payment proof
+6. Verify a receive payment proof
+0. Quit
+
+#### Update start balances and payment amount  
+This allows you to update the sender and receivers start balances and the amount that is being paid from the sender to the receiver.  If these values are updated, new proofs need to be generated and verified
+
+#### Generate a new key pair  
+This creates a new proving key and verification key from the circuit.  They are saved to the files provingKey and verificationKey
+
+#### Generate a send payment proof  
+This generates a proof using the proving key as well as the input values:
+
+* start balance = sender balance (as defined in option 1)
+* payment amount = payment amount (as defined in option 1)
+* end balance = start balance - payment amount
+
+The proof is end balance + payment amount = start balance
+
+#### Generate a receiver payment proof  
+This generates a proof using the proving key as well as the input values:
+
+* start balance = receiver balance (as defined in option 1)
+* payment amount = payment amount (as defined in option 1)
+* end balance = start balance + payment amount
+
+The proof is start balance + payment amount = end balance
+
+#### Verify a send payment proof  
+Verifies the send payment proof generated in option 3.  Uses the public inputs (i.e. the salted hashes of the balances and the payment amount)
+
+#### Verify a receive payment proof  
+Verifies the receive payment proof generated in option 4.  Uses the public inputs (i.e. the salted hashes of the balances and the payment amount)
 
 ## anatomy
 

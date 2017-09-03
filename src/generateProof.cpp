@@ -8,46 +8,11 @@
 #include <string>
 
 #include "snark.hpp"
+#include "utils.cpp"
 #include "test.h"
 
 using namespace libsnark;
 using namespace std;
-
-bit_vector int_list_to_bits_local(const vector<unsigned long> &l, const size_t wordsize)
-{
-    bit_vector res(wordsize*l.size());
-    for (size_t i = 0; i < l.size(); ++i)
-    {
-        for (size_t j = 0; j < wordsize; ++j)
-        {
-            res[i*wordsize + j] = (*(l.begin()+i) & (1ul<<(wordsize-1-j)));
-        }
-    }
-    return res;
-}
-
-vector<vector<unsigned long>> fillValuesFromfile(string fileName ) {
-{
-    string line;
-
-    vector<vector<long unsigned int>> outputValues;
-    ifstream inputParameters(fileName);
-    while(getline(inputParameters, line)){
-
-      cout << line << endl;
-
-      stringstream iss( line );
-
-      int number; 
-      vector<long unsigned int> outputValue;
-      while ( iss >> number )
-        outputValue.push_back( number );
-
-      outputValues.push_back(outputValue);
-    }
-    return outputValues;
-  }
-}
 
 int main(int argc, char *argv[])
 {
@@ -76,7 +41,7 @@ int main(int argc, char *argv[])
   vector<bool> r3_bv(256);
 
   {
-    vector<vector<unsigned long int>> values = fillValuesFromfile("inputParameters");
+    vector<vector<unsigned long int>> values = fillValuesFromfile(argv[2]);
     h1_bv = int_list_to_bits_local(values[0], 8);
     h2_bv = int_list_to_bits_local(values[1], 8);
     h3_bv = int_list_to_bits_local(values[2], 8);
@@ -93,7 +58,7 @@ int main(int argc, char *argv[])
   proofStream << proof;
 
   ofstream fileOut;
-  fileOut.open("proof");
+  fileOut.open(argv[1]);
 
   fileOut << proofStream.rdbuf();
   fileOut.close();
