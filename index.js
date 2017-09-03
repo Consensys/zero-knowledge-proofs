@@ -1,4 +1,5 @@
 var prompt = require('prompt');
+var fs = require('fs');
 
 const {exec} = require( 'child_process' )
 const sha256 = require('sha256')
@@ -20,19 +21,12 @@ function handleExecuteProgram(programName, msgStart, msgEnd, msgError, cb){
   });
 }
 
-function generateProofInputs(startBalance, paymentAmount, cb){
+function generateProofInputs(r1, r2, r3, cb){
 
-  var arr_r1 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, startBalance-paymentAmount, 202, 5, 190, 15, 140, 211, 75, 131, 62, 136, 12, 6, 17, 4, 10, 18]
-  var arr_r2 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, paymentAmount, 6, 171, 218, 43, 241, 15, 217, 251, 205, 248, 0, 21, 86, 194, 100, 94]
-  var arr_r3 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, startBalance, 200, 1, 111, 160, 141, 10, 73, 36, 65, 16, 15, 6, 17, 2, 11, 8]
-
-  console.log('elements in arr_1:', arr_r1.length)
-  console.log('elements in arr_2:', arr_r2.length)
-  console.log('elements in arr_3:', arr_r3.length)
-
-  console.log('Value at 15:', arr_r1[15])
-  console.log('Value at 15:', arr_r2[15])
-  console.log('Value at 15:', arr_r3[15])
+  //proof is that r1+r2=r3
+  var arr_r1 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, r1, 202, 5, 190, 15, 140, 211, 75, 131, 62, 136, 12, 6, 17, 4, 10, 18]
+  var arr_r2 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, r2, 6, 171, 218, 43, 241, 15, 217, 251, 205, 248, 0, 21, 86, 194, 100, 94]
+  var arr_r3 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, r3, 200, 1, 111, 160, 141, 10, 73, 36, 65, 16, 15, 6, 17, 2, 11, 8]
 
   var r1_b = Buffer.from(arr_r1)
   var r2_b = Buffer.from(arr_r2)
@@ -42,23 +36,23 @@ function generateProofInputs(startBalance, paymentAmount, cb){
   var r2_i = parseInt(r2_b.toString('hex'), 16)
   var r3_i = parseInt(r3_b.toString('hex'), 16)
 
-  console.log('r1_i', r1_i)
-  console.log('r2_i', r2_i)
-  console.log('r3_i', r3_i)
-
-  console.log('sha256(r1_b)', sha256(r1_b))
-  console.log('sha256(r2_b)', sha256(r2_b))
-  console.log('sha256(r3_b)', sha256(r3_b))
-
   var h1_b = sha256(r1_b, {asBytes: true})
   var h2_b = sha256(r2_b, {asBytes: true})
   var h3_b = sha256(r3_b, {asBytes: true})
 
-  console.log('h1_b', h1_b)
-  console.log('h2_b', h2_b)
-  console.log('h3_b', h3_b)
-
-  cb('array value')
+  var inputParameters = h1_b.toString().replace(/,/g, ' ') + "\n";
+  inputParameters += h2_b.toString().replace(/,/g, ' ') + "\n";
+  inputParameters += h3_b.toString().replace(/,/g, ' ') + "\n";
+  inputParameters += arr_r1.toString().replace(/,/g, ' ') + "\n";
+  inputParameters += arr_r2.toString().replace(/,/g, ' ') + "\n";
+  inputParameters += arr_r3.toString().replace(/,/g, ' ');
+  fs.writeFile('inputParameters', inputParameters, function(err) {
+    if(err) {
+      cb('An error occured generating the input parameters:',err);
+    } else {
+      cb('The input parameters were succesfully generated and saved to the file: inputParameters', null);
+    }
+  }); 
 }
 
 function handleGenerateSendPaymentProof(cb){
@@ -66,10 +60,36 @@ function handleGenerateSendPaymentProof(cb){
   prompt.get(['option'], function(err, startingBalance){
       console.log('Please enter the amount you are sending')
       prompt.get(['option'], function(err, paymentAmount){
-        generateProofInputs(parseInt(startingBalance.option), parseInt(paymentAmount.option), function(proofInputs){
-          handleExecuteProgram('./generateProof', 'Loading Proving Key from file... (this takes a few seconds)', '', 'The proof generation failed\n\n', function(){
+        generateProofInputs(parseInt(startingBalance.option) - parseInt(paymentAmount.option), parseInt(paymentAmount.option), parseInt(startingBalance.option), function(msg, err){
+          if(err){
+            console.log(msg, err)
             cb()
-          })
+          } else {
+            console.log(msg)
+            handleExecuteProgram('./generateProof', 'Loading Proving Key from file... (this takes a few seconds)', '', 'The proof generation failed\n\n', function(){
+              cb()
+            })
+          }
+      })
+    })
+  })
+}
+
+function handleGenerateReceivePaymentProof(cb){
+  console.log('Please enter your starting balance')
+  prompt.get(['option'], function(err, startingBalance){
+      console.log('Please enter the amount you are receiving')
+      prompt.get(['option'], function(err, paymentAmount){
+        generateProofInputs(parseInt(startingBalance.option), parseInt(paymentAmount.option), parseInt(startingBalance.option) + parseInt(paymentAmount.option), function(msg, err){
+          if(err){
+            console.log(msg, err)
+            cb()
+          } else {
+            console.log(msg)
+            handleExecuteProgram('./generateProof', 'Loading Proving Key from file... (this takes a few seconds)', '', 'The proof generation failed\n\n', function(){
+              cb()
+            })
+          }
       })
     })
   })
@@ -86,7 +106,15 @@ function handleInput(){
       handleGenerateSendPaymentProof(function(){
         handleInput()
       })
-    } else if(answer.option == 3){
+    } else if (answer.option == 3){
+      handleGenerateReceivePaymentProof(function(){
+        handleInput()
+      })
+    } else if(answer.option == 4){
+      handleExecuteProgram('./verifyProof', '', '', 'The proof verification failed\n\n', function(){
+        handleInput()
+      })
+    } else if(answer.option == 5){
       handleExecuteProgram('./verifyProof', '', '', 'The proof verification failed\n\n', function(){
         handleInput()
       })
