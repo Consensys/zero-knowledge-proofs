@@ -51,7 +51,7 @@ vector<vector<unsigned long>> fillValuesFromfile(string fileName ) {
 
 int main(int argc, char *argv[])
 {
-  std::string keyFileName = "provingKey";
+  string keyFileName = "provingKey";
 
   // Initialize the curve parameters.
   default_r1cs_ppzksnark_pp::init_public_params();
@@ -68,15 +68,15 @@ int main(int argc, char *argv[])
   provingKeyFromFile >> provingKey_in;
  
   // Initialize bit_vectors for all of the variables involved.
-  std::vector<bool> h1_bv(256);
-  std::vector<bool> h2_bv(256);
-  std::vector<bool> h3_bv(256);
-  std::vector<bool> r1_bv(256);
-  std::vector<bool> r2_bv(256);
-  std::vector<bool> r3_bv(256);
+  vector<bool> h1_bv(256);
+  vector<bool> h2_bv(256);
+  vector<bool> h3_bv(256);
+  vector<bool> r1_bv(256);
+  vector<bool> r2_bv(256);
+  vector<bool> r3_bv(256);
 
   {
-    std::vector<std::vector<unsigned long int>> values = fillValuesFromfile("inputParameters");
+    vector<vector<unsigned long int>> values = fillValuesFromfile("inputParameters");
     h1_bv = int_list_to_bits_local(values[0], 8);
     h2_bv = int_list_to_bits_local(values[1], 8);
     h3_bv = int_list_to_bits_local(values[2], 8);
@@ -97,21 +97,5 @@ int main(int argc, char *argv[])
 
   fileOut << proofStream.rdbuf();
   fileOut.close();
-/*
-  // Read verifier key in from file
-  r1cs_ppzksnark_verification_key<default_r1cs_ppzksnark_pp> verifierKey_in;
-  ifstream verifierFileIn("verifierKey");
-  stringstream verifierKeyFromFile;
-  if (verifierFileIn) {
-     verifierKeyFromFile << verifierFileIn.rdbuf();
-     verifierFileIn.close();
-  }
-  verifierKeyFromFile >> verifierKey_in;
-
-  // Verify the proof
-  bool isVerified = verify_proof(verifierKey_in, *proof, h1_bv, h2_bv, h3_bv);
-
-  cout << "isVerified: " << isVerified << endl;
-*/
   return 0;
 }
