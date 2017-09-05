@@ -40,9 +40,6 @@ Follow the prompts.
 4. Verifies the proofs
 0. Quit
 
-#### Update start balances and payment amount  
-This allows you to update the sender and receivers start balances and the amount that is being paid from the sender to the receiver.  If these values are updated, new proofs need to be generated and verified
-
 #### Generate a new key pair  
 This creates a new proving key and verification key from the circuit.  They are saved to the files provingKey and verificationKey
 
@@ -64,11 +61,8 @@ This generates a proof using the proving key as well as the input values:
 
 The proof is start balance + payment amount = end balance
 
-#### Verify a send payment proof  
-Verifies the send payment proof generated in option 3.  Uses the public inputs (i.e. the salted hashes of the balances and the payment amount)
-
-#### Verify a receive payment proof  
-Verifies the receive payment proof generated in option 4.  Uses the public inputs (i.e. the salted hashes of the balances and the payment amount)
+#### Verify proofs  
+Verifies the send payment proof generated in option 2 and the receive payment proof generated in option 3.  Uses the public inputs (i.e. the salted hashes of the balances and the payment amount)
 
 ## anatomy
 
