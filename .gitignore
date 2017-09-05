@@ -8,7 +8,6 @@ libsnark
 verifyProof
 verificationKey
 provingKey
-proof
 sendProof
 receiveProof
 generateKeyPair
