@@ -27,14 +27,17 @@ Code based on <https://github.com/ebfull/lightning_circuit>.
 
 `./get-libsnark && make`
 
+`npm install`
+
 ### Running  
-`node index.js`
+`node index.js senderBalance=10000 receiverBalance=9000`
 
 Follow the prompts.  
 
 1. Generates a key pair
-2. Generates a proof
-3. Verifies the proof
+2. Generates a sender proof
+3. Generates a receiver proof
+4. Verifies the proofs
 
 ## anatomy
 
