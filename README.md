@@ -27,17 +27,17 @@ Code based on <https://github.com/ebfull/lightning_circuit>.
 
 `./get-libsnark && make`
 
+`npm install`
+
 ### Running  
-`node index.js`
+`node index.js senderBalance=10000 receiverBalance=9000`
 
-You will see the following menu options:  
+Follow the prompts.  
 
-1. Update start balances and payment amount
-2. Create a new key pair
-3. Generate a send payment proof
-4. Generate a receive payment proof
-5. Verify a send payment proof
-6. Verify a receive payment proof
+1. Generates a key pair
+2. Generates a sender proof
+3. Generates a receiver proof
+4. Verifies the proofs
 0. Quit
 
 #### Update start balances and payment amount  
