@@ -8,7 +8,10 @@ libsnark
 verifyProof
 verificationKey
 provingKey
-proof
+sendProof
+receiveProof
 generateKeyPair
 generateProof
+sendProofInputs
+receiveProofInputs
 node_modules/
