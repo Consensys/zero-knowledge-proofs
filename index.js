@@ -30,14 +30,14 @@ function handleExecuteProgram(programName, msgStart, msgEnd, msgError, cb){
       console.error(`exec error: ${error}`)
       console.log(msgError)
       cb(error)
-    }
-    if(stderr){
+    } else if(stderr){
       console.log(`stderr: ${stderr}`)
       console.log(msgError)
       cb(msgError)
+    } else {
+      console.log(msgEnd)
+      cb(null)
     }
-    console.log(msgEnd)
-    cb(null)
   });
 }
 
