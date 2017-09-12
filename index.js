@@ -5,8 +5,9 @@ const {exec} = require( 'child_process' )
 const sha256 = require('sha256')
 
 var senderBalance = 0
-var paymentAmount = 0
 var receiverBalance = 0
+var paymentAmount1 = 0
+var paymentAmount2 = 0
 
 if(process.argv.length!=4){
   console.log("you need to setup the sender and receiver balance.  Run the application using node index.js senderBalance=100 receiverBalance=50")
@@ -96,36 +97,23 @@ function generateProofInputs(r1, r2, r3, fileName, cb){
   }); 
 }
 
-function handleUpdateOpeningBalancesAndPaymentAmount(cb){
-  console.log('Please enter the senders starting balance')
-  prompt.get(['option'], function(err, sendersBalance){
-    console.log('Please enter the receivers starting balance')
-    prompt.get(['option'], function(err, receiversBalance){
-      console.log('Please enter the amount that is being paid')
-      prompt.get(['option'], function(err, paymentAmount){
-        sBal = parseInt(sendersBalance.option)
-        rBal = parseInt(receiversBalance.option)
-        pAmount = parseInt(paymentAmount.option)
-        cb()
-      })
-    })
-  })
-}
-
 function handleGenerateSendPaymentProof(cb){
   fs.unlink('sendProof', function(error) {
     fs.unlink('receiveProof', function(error) {
-      console.log('Please enter the amount that is being paid')
-      prompt.get(['option'], function(err, paymentAmountInput){
-        paymentAmount = parseInt(paymentAmountInput.option)
-        generateProofInputs((senderBalance - paymentAmount), paymentAmount, senderBalance, 'sendProofInputs', function(msg, err){
+      console.log('Please enter the amounts that are being paid')
+      prompt.get(['amount1', 'amount2'], function(err, paymentAmountInputs){
+        paymentAmount1 = parseInt(paymentAmountInputs.amount1)
+        paymentAmount2 = parseInt(paymentAmountInputs.amount2)
+        generateProofInputs((senderBalance - paymentAmount1 - paymentAmount2), (paymentAmount1 + paymentAmount2), senderBalance, 'sendProofInputs', function(msg, err){
           if(err){
             console.log(msg, err)
             cb()
           } else {
             console.log(msg)
-            handleExecuteProgram('./generateProof sendProof sendProofInputs', 'Loading Proving Key from file... (this takes a few seconds)', '', 'The proof generation failed\n\n', function(){
-              cb()
+            generateProofInputs(paymentAmount1, paymentAmount2 , (paymentAmount1 + paymentAmount2), 'paymentAmountInputs', function(msgP, errP){
+              handleExecuteProgram('./generateProof sendProof sendProofInputs paymentAmountsProof paymentAmountInputs', 'Loading Proving Key from file... (this takes a few seconds)', '', 'The proof generation failed\n\n', function(){
+                cb()
+              })
             })
           }
         })
@@ -135,13 +123,13 @@ function handleGenerateSendPaymentProof(cb){
 }
 
 function handleGenerateReceivePaymentProof(cb){
-  generateProofInputs(receiverBalance, paymentAmount, (receiverBalance + paymentAmount), 'receiveProofInputs', function(msg, err){
+  generateProofInputs(receiverBalance, paymentAmount1, (receiverBalance + paymentAmount1), 'receiveProofInputs', function(msg, err){
     if(err){
       console.log(msg, err)
       cb()
     } else {
       console.log(msg)
-      handleExecuteProgram('./generateProof receiveProof receiveProofInputs', 'Loading Proving Key from file... (this takes a few seconds)', '', 'The proof generation failed\n\n', function(){
+      handleExecuteProgram('./generateProof receiveProof receiveProofInputs paymentAmountsProof paymentAmountInputs', 'Loading Proving Key from file... (this takes a few seconds)', '', 'The proof generation failed\n\n', function(){
         cb()
       })
     }
@@ -166,20 +154,20 @@ function handleInput(){
         handleInput()
       })
     } else if(answer.option == 4){
-      handleExecuteProgram('./verifyProof sendProof sendProofInputs', '', '', 'The proof verification failed\n\n', function(sendProofErr){
+      handleExecuteProgram('./verifyProof sendProof sendProofInputs paymentAmountsProof paymentAmountInputs', '', '', 'The proof verification failed\n\n', function(sendProofErr){
         if(sendProofErr){
           console.log(sendProofErr)
           handleInput()
         } else {
           console.log('Send proof verification was succesful')
-          handleExecuteProgram('./verifyProof receiveProof receiveProofInputs', '', '', 'The proof verification failed\n\n', function(receiveProofErr){
+          handleExecuteProgram('./verifyProof receiveProof receiveProofInputs paymentAmountsProof paymentAmountInputs', '', '', 'The proof verification failed\n\n', function(receiveProofErr){
             if(receiveProofErr){
               console.log(receiveProofErr)
             } else {
               console.log('Receive proof verification was succesful')
-              senderBalance = senderBalance - paymentAmount
-              receiverBalance = receiverBalance - paymentAmount
-              paymentAmount = 0 //This stops the balances being changed if proof verification is run multiple times
+              senderBalance = senderBalance - paymentAmount1
+              receiverBalance = receiverBalance - paymentAmount1
+              paymentAmount1 = 0 //This stops the balances being changed if proof verification is run multiple times
             }
             handleInput()
           })

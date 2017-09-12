@@ -14,4 +14,6 @@ generateKeyPair
 generateProof
 sendProofInputs
 receiveProofInputs
+paymentAmountsProof
+paymentAmountInputs
 node_modules/
