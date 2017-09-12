@@ -40,22 +40,24 @@ Follow the prompts.
 0. Quit
 
 #### Generate a new key pair  
-This creates a new proving key and verification key from the circuit.  They are saved to the files provingKey and verificationKey
+This creates a new proving key and verification key from the circuit.  They are saved to the files:  
+* `provingKey`
+* `verificationKey`
 
 #### Generate a multi-payment proof  
 This generates a proof using the proving key as well as the input values:
 
-* start balance
-* incoming payments (currently the user is prompted for 2 incoming payments)
-* outgoing payments (currently the user is prompted for 2 outgoing payments)
-* intermediate balance (start balance + incoming payments)
-* end balance (intermediate balance - outgoing payments)
+* `start balance`
+* `incoming payments` (currently the user is prompted for 2 incoming payments)
+* `outgoing payments` (currently the user is prompted for 2 outgoing payments)
+* `intermediate balance` (start balance + incoming payments)
+* `end balance` (intermediate balance - outgoing payments)
 
 The proofs are:  
-* incoming1 + incoming2 = total incoming
-* outgoing1 + outgoing2 = total outgoing
-* start balance + total incoming = intermediate balance
-* end balance + total outgoing = intermediate balance
+* `incoming1` + `incoming2` = `total incoming`
+* `outgoing1` + `outgoing2` = `total outgoing`
+* `start balance` + `total incoming` = `intermediate balance`
+* `end balance` + `total outgoing` = `intermediate balance`
 
 #### Verify multi-payment proof  
 Verifies the above proofs
