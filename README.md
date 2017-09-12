@@ -34,39 +34,31 @@ Code based on <https://github.com/ebfull/lightning_circuit>.
 
 Follow the prompts.  
 
-1. Generates a key pair
-2. Generates a sender proof
-3. Generates a receiver proof
-4. Verifies the proofs
+1. Generate a key pair
+2. Generate a multi-payment proof
+4. Verify multi-payment proof
 0. Quit
 
 #### Generate a new key pair  
 This creates a new proving key and verification key from the circuit.  They are saved to the files provingKey and verificationKey
 
-#### Generate a send payment proof  
+#### Generate a multi-payment proof  
 This generates a proof using the proving key as well as the input values:
 
-* start balance = sender balance
-* payment amounts = payment amounts (user is prompted for the payment amounts)
-* end balance = start balance - payment amounts
+* start balance
+* incoming payments (currently the user is prompted for 2 incoming payments)
+* outgoing payments (currently the user is prompted for 2 outgoing payments)
+* intermediate balance (start balance + incoming payments)
+* end balance (intermediate balance - outgoing payments)
 
 The proofs are:  
-* end balance + payment amounts = start balance
-* payment1 + payment2 = total payment amount
+* incoming1 + incoming2 = total incoming
+* outgoing1 + outgoing2 = total outgoing
+* start balance + total incoming = intermediate balance
+* end balance + total outgoing = intermediate balance
 
-#### Generate a receiver payment proof  
-This generates a proof using the proving key as well as the input values:
-
-* start balance = receiver balance
-* payment amounts = payment amounts (as defined in option 2)
-* end balance = start balance + payment amounts
-
-The proof is:  
-* start balance + payment amounts = end balance
-* payment1 + payment2 = total payment amount
-
-#### Verify proofs  
-Verifies the send payment proof generated in option 2 and the receive payment proof generated in option 3.  Uses the public inputs (i.e. the salted hashes of the balances and the payment amount)
+#### Verify multi-payment proof  
+Verifies the above proofs
 
 ## anatomy
 

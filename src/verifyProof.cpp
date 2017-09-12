@@ -75,9 +75,11 @@ int main(int argc, char *argv[])
   }
   verificationKeyFromFile >> verificationKey_in;
 
-  int proof1 = verifyProof(verificationKey_in, argv[1], argv[2]);
-  int proof2 = verifyProof(verificationKey_in, argv[3], argv[4]);
-  return proof1 & proof2;
+  int proof1 = verifyProof(verificationKey_in, "proof1", "proof1Inputs");
+  int proof2 = verifyProof(verificationKey_in, "proof2", "proof2Inputs");
+  int proof3 = verifyProof(verificationKey_in, "proof3", "proof3Inputs");
+  int proof4 = verifyProof(verificationKey_in, "proof4", "proof4Inputs");
+  return proof1 | proof2 | proof3 | proof4;
 
   /*
   // Read proof in from file

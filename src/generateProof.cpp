@@ -65,8 +65,10 @@ int main(int argc, char *argv[])
  
   provingKeyFromFile >> provingKey_in;
  
-  int proof1 = genProof(provingKey_in, argv[1], argv[2]);
-  int proof2 = genProof(provingKey_in, argv[3], argv[4]);
+  int proof1 = genProof(provingKey_in, "proof1", "proof1Inputs");
+  int proof2 = genProof(provingKey_in, "proof2", "proof2Inputs");
+  int proof3 = genProof(provingKey_in, "proof3", "proof3Inputs");
+  int proof4 = genProof(provingKey_in, "proof4", "proof4Inputs");
 
   return 0;
   /*

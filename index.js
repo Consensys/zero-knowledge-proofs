@@ -4,22 +4,24 @@ var fs = require('fs');
 const {exec} = require( 'child_process' )
 const sha256 = require('sha256')
 
-var senderBalance = 0
-var receiverBalance = 0
-var paymentAmount1 = 0
-var paymentAmount2 = 0
+var startBalance = 0
+var endBalance = 0
+var intermediateBalance = 0
+var incoming1 = 0
+var incoming2 = 0
+var outgoing1 = 0
+var outgoing2 = 0
 
-if(process.argv.length!=4){
-  console.log("you need to setup the sender and receiver balance.  Run the application using node index.js senderBalance=100 receiverBalance=50")
+if(process.argv.length!=3){
+  console.log("you need to set your start balance.  Run the application using node index.js startBalance=1000")
   return 1
 }
 
 process.argv.forEach(function (val, index, array) {
-  if(val.startsWith("senderBalance")){
-    senderBalance = parseInt(val.split("=")[1]);
-  }
-  if(val.startsWith("receiverBalance")){
-    receiverBalance = parseInt(val.split("=")[1]);
+  if(val.startsWith("startBalance")){
+    startBalance = parseInt(val.split("=")[1])
+    intermediateBalance = startBalance
+    endBalance = startBalance
   }
 });
 
@@ -97,80 +99,96 @@ function generateProofInputs(r1, r2, r3, fileName, cb){
   }); 
 }
 
-function handleGenerateSendPaymentProof(cb){
-  fs.unlink('sendProof', function(error) {
-    fs.unlink('receiveProof', function(error) {
-      console.log('Please enter the amounts that are being paid')
-      prompt.get(['amount1', 'amount2'], function(err, paymentAmountInputs){
-        paymentAmount1 = parseInt(paymentAmountInputs.amount1)
-        paymentAmount2 = parseInt(paymentAmountInputs.amount2)
-        generateProofInputs((senderBalance - paymentAmount1 - paymentAmount2), (paymentAmount1 + paymentAmount2), senderBalance, 'sendProofInputs', function(msg, err){
-          if(err){
-            console.log(msg, err)
-            cb()
-          } else {
-            console.log(msg)
-            generateProofInputs(paymentAmount1, paymentAmount2 , (paymentAmount1 + paymentAmount2), 'paymentAmountInputs', function(msgP, errP){
-              handleExecuteProgram('./generateProof sendProof sendProofInputs paymentAmountsProof paymentAmountInputs', 'Loading Proving Key from file... (this takes a few seconds)', '', 'The proof generation failed\n\n', function(){
-                cb()
+function handleGenerateMultiPaymentProof(cb){
+  fs.unlink('proof1', function(error) {
+  fs.unlink('proof2', function(error) {
+  fs.unlink('proof3', function(error) {
+  fs.unlink('proof4', function(error) {
+    console.log('Please enter the amounts that are being paid')
+    prompt.get(['incoming1', 'incoming2', 'outgoing1', 'outgoing2'], function(err, paymentAmountInputs){
+      incoming1 = parseInt(paymentAmountInputs.incoming1)
+      incoming2 = parseInt(paymentAmountInputs.incoming2)
+      outgoing1 = parseInt(paymentAmountInputs.outgoing1)
+      outgoing2 = parseInt(paymentAmountInputs.outgoing2)
+      intermediateBalance = startBalance + incoming1 + incoming2
+      endBalance = intermediateBalance - outgoing1 - outgoing2
+
+      generateProofInputs(startBalance, (incoming1 + incoming2), intermediateBalance, 'proof1Inputs', function(msg1, err1){
+        if(err1){
+          console.log(msg1, err1)
+          cb()
+        } else {
+          console.log(msg1)
+
+          generateProofInputs(endBalance, (outgoing1 + outgoing2), intermediateBalance, 'proof2Inputs', function(msg2, err2){
+            if(err2){
+              console.log(msg2, err2)
+              cb()
+            } else {
+              console.log(msg2)
+
+              generateProofInputs(incoming1, incoming2, (incoming1 + incoming2), 'proof3Inputs', function(msg3, err3){
+                if(err3){
+                  console.log(msg3, err3)
+                  cb()
+                } else {
+                  console.log(msg3)
+
+                  generateProofInputs(outgoing1, outgoing2, (outgoing1 + outgoing2), 'proof4Inputs', function(msg4, err4){
+                    if(err4){
+                      console.log(msg4, err4)
+                      cb()
+                    } else {
+                      console.log(msg4)
+                      handleExecuteProgram('./generateProof', 'Loading Proving Key from file... (this takes a few seconds)', '', 'The proof generation failed\n\n', function(){
+                        cb()
+                      })
+                    }
+                  })
+                }
               })
-            })
-          }
-        })
+            }
+          })
+        }
       })
     })
   })
-}
-
-function handleGenerateReceivePaymentProof(cb){
-  generateProofInputs(receiverBalance, paymentAmount1, (receiverBalance + paymentAmount1), 'receiveProofInputs', function(msg, err){
-    if(err){
-      console.log(msg, err)
-      cb()
-    } else {
-      console.log(msg)
-      handleExecuteProgram('./generateProof receiveProof receiveProofInputs paymentAmountsProof paymentAmountInputs', 'Loading Proving Key from file... (this takes a few seconds)', '', 'The proof generation failed\n\n', function(){
-        cb()
-      })
-    }
+  })
+  })
   })
 }
 
 function handleInput(){
-  console.log('Sender balance:', senderBalance)
-  console.log('Receiver balance:', receiverBalance)
-  console.log('Please select an option:\n1) Create a new key pair\n2) Generate a send payment proof\n3) Generate a receive payment proof\n4) Verify proofs\n0) Quit')
+  console.log('Start balance:', startBalance)
+  console.log('Total incoming payments:', (incoming1 + incoming2))
+  console.log('Total outgoing payments:', (outgoing1 + outgoing2))
+  console.log('End balance:', endBalance)
+  console.log('')
+  console.log('Please select an option:\n1) Create a new key pair\n2) Generate a multi-payment proof\n3) Verify multi-payment proof\n0) Quit')
   prompt.get(['option'], function(err, answer){
     if(answer.option == 1){
       handleExecuteProgram('./generateKeyPair', 'Generating key pair...', 'The key pair has been generated and the keys written to files (provingKey and verificationKey)', 'The key pair failed\n\n', function(){
         handleInput()
       })
     } else if (answer.option == 2){
-      handleGenerateSendPaymentProof(function(){
+      handleGenerateMultiPaymentProof(function(){
         handleInput()
       })
-    } else if (answer.option == 3){
-      handleGenerateReceivePaymentProof(function(){
-        handleInput()
-      })
-    } else if(answer.option == 4){
-      handleExecuteProgram('./verifyProof sendProof sendProofInputs paymentAmountsProof paymentAmountInputs', '', '', 'The proof verification failed\n\n', function(sendProofErr){
-        if(sendProofErr){
-          console.log(sendProofErr)
+    } else if(answer.option == 3){
+      handleExecuteProgram('./verifyProof', '', '', 'The proof verification failed\n\n', function(verifyErr){
+        if(verifyErr){
+          console.log(verifyErr)
           handleInput()
         } else {
-          console.log('Send proof verification was succesful')
-          handleExecuteProgram('./verifyProof receiveProof receiveProofInputs paymentAmountsProof paymentAmountInputs', '', '', 'The proof verification failed\n\n', function(receiveProofErr){
-            if(receiveProofErr){
-              console.log(receiveProofErr)
-            } else {
-              console.log('Receive proof verification was succesful')
-              senderBalance = senderBalance - paymentAmount1
-              receiverBalance = receiverBalance - paymentAmount1
-              paymentAmount1 = 0 //This stops the balances being changed if proof verification is run multiple times
-            }
-            handleInput()
-          })
+          console.log('Verification was succesful')
+          startBalance = endBalance
+          intermediateBalance = endBalance
+          incoming1 = 0
+          incoming2 = 0
+          outgoing1 = 0
+          outgoing2 = 0
+          
+          handleInput()
         }
       })
     } else {
