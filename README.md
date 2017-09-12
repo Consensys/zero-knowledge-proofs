@@ -30,7 +30,7 @@ Code based on <https://github.com/ebfull/lightning_circuit>.
 `npm install`
 
 ### Running  
-`node index.js senderBalance=10000 receiverBalance=9000`
+`node index.js startBalance=10000`
 
 Follow the prompts.  
 
