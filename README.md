@@ -46,20 +46,24 @@ This creates a new proving key and verification key from the circuit.  They are 
 #### Generate a send payment proof  
 This generates a proof using the proving key as well as the input values:
 
-* start balance = sender balance (as defined in option 1)
-* payment amount = payment amount (as defined in option 1)
-* end balance = start balance - payment amount
+* start balance = sender balance
+* payment amounts = payment amounts (user is prompted for the payment amounts)
+* end balance = start balance - payment amounts
 
-The proof is end balance + payment amount = start balance
+The proofs are:  
+* end balance + payment amounts = start balance
+* payment1 + payment2 = total payment amount
 
 #### Generate a receiver payment proof  
 This generates a proof using the proving key as well as the input values:
 
-* start balance = receiver balance (as defined in option 1)
-* payment amount = payment amount (as defined in option 1)
-* end balance = start balance + payment amount
+* start balance = receiver balance
+* payment amounts = payment amounts (as defined in option 2)
+* end balance = start balance + payment amounts
 
-The proof is start balance + payment amount = end balance
+The proof is:  
+* start balance + payment amounts = end balance
+* payment1 + payment2 = total payment amount
 
 #### Verify proofs  
 Verifies the send payment proof generated in option 2 and the receive payment proof generated in option 3.  Uses the public inputs (i.e. the salted hashes of the balances and the payment amount)
