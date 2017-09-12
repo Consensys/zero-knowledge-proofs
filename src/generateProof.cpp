@@ -36,15 +36,23 @@ int genProof(r1cs_ppzksnark_proving_key<default_r1cs_ppzksnark_pp> provingKey_in
 
   boost::optional<libsnark::r1cs_ppzksnark_proof<libff::alt_bn128_pp>> proof = generate_proof<default_r1cs_ppzksnark_pp>(provingKey_in, h1_bv, h2_bv, h3_bv, r1_bv, r2_bv, r3_bv);
 
-  stringstream proofStream;
-  proofStream << proof;
+  if(proof == boost::none)
+  {
 
-  ofstream fileOut;
-  fileOut.open(proofFileName);
+    return 1;
 
-  fileOut << proofStream.rdbuf();
-  fileOut.close();
-  return 0;
+  } else {
+  
+    stringstream proofStream;
+    proofStream << proof;
+
+    ofstream fileOut;
+    fileOut.open(proofFileName);
+
+    fileOut << proofStream.rdbuf();
+    fileOut.close();
+    return 0;
+  }
 }
 
 int main(int argc, char *argv[])
@@ -65,12 +73,24 @@ int main(int argc, char *argv[])
  
   provingKeyFromFile >> provingKey_in;
  
-  int proof1 = genProof(provingKey_in, "proof1", "proof1Inputs");
-  int proof2 = genProof(provingKey_in, "proof2", "proof2Inputs");
-  int proof3 = genProof(provingKey_in, "proof3", "proof3Inputs");
-  int proof4 = genProof(provingKey_in, "proof4", "proof4Inputs");
+  int proof1 = 1;
+  int proof2 = 1;
+  int proof3 = 1;
+  int proof4 = 1;
 
-  return 0;
+
+  proof1 = genProof(provingKey_in, "proof1", "proof1Inputs");
+  if(proof1 == 0){
+    proof2 = genProof(provingKey_in, "proof2", "proof2Inputs");
+    if(proof2 == 0) {
+      proof3 = genProof(provingKey_in, "proof3", "proof3Inputs");
+      if(proof3 == 0) {
+        proof4 = genProof(provingKey_in, "proof4", "proof4Inputs");
+      }
+    }
+  }
+
+  return proof1 | proof2 | proof3 | proof4;
   /*
   // Initialize bit_vectors for all of the variables involved.
   vector<bool> h1_bv(256);
