@@ -12,7 +12,7 @@
 using namespace libsnark;
 using namespace std;
 
-int verifyProof(r1cs_ppzksnark_verification_key<default_r1cs_ppzksnark_pp> verificationKey_in, string proofFileName, string inputsFileName)
+int verifyProof(r1cs_ppzksnark_verification_key<default_r1cs_ppzksnark_pp> verificationKey_in, string proofFileName, int h1_index, int h2_index, int h3_index)
 {
   // Read proof in from file
   //libsnark::r1cs_ppzksnark_proof<libff::alt_bn128_pp> proof_in;
@@ -36,10 +36,10 @@ int verifyProof(r1cs_ppzksnark_verification_key<default_r1cs_ppzksnark_pp> verif
   std::vector<bool> h1_bv(256);
   std::vector<bool> h2_bv(256);
   std::vector<bool> h3_bv(256);
-  vector<vector<unsigned long int>> values = fillValuesFromfile(inputsFileName);
-  h1_bv = int_list_to_bits_local(values[0], 8);
-  h2_bv = int_list_to_bits_local(values[1], 8);
-  h3_bv = int_list_to_bits_local(values[2], 8);
+  vector<vector<unsigned long int>> values = fillValuesFromfile("publicInputParameters");
+  h1_bv = int_list_to_bits_local(values[h1_index], 8);
+  h2_bv = int_list_to_bits_local(values[h2_index], 8);
+  h3_bv = int_list_to_bits_local(values[h3_index], 8);
 
   cout << "proof read ... starting verification" << endl;
   // Verify the proof
@@ -71,8 +71,8 @@ int main(int argc, char *argv[])
   }
   verificationKeyFromFile >> verificationKey_in;
 
-  int proof1 = verifyProof(verificationKey_in, "proof1", "proof1Inputs");
-  int proof2 = verifyProof(verificationKey_in, "proof2", "proof2Inputs");
+  int proof1 = verifyProof(verificationKey_in, "proof1", 0, 3, 2);
+  int proof2 = verifyProof(verificationKey_in, "proof2", 1, 4, 2);
   return proof1 | proof2;
 }
 
