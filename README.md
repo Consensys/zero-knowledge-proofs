@@ -35,7 +35,7 @@ Code based on <https://github.com/ebfull/lightning_circuit>.
 Follow the prompts.  
 
 1. Generate a key pair
-2. Generate a multi-payment proof
+2. Generate a multi-payment proof (one in and one out)
 4. Verify multi-payment proof
 0. Quit
 
@@ -48,16 +48,14 @@ This creates a new proving key and verification key from the circuit.  They are 
 This generates a proof using the proving key as well as the input values:
 
 * `start balance`
-* `incoming payments` (currently the user is prompted for 2 incoming payments)
-* `outgoing payments` (currently the user is prompted for 2 outgoing payments)
+* `incoming payment` (currently the user is prompted for 1 incoming payments)
+* `outgoing payment` (currently the user is prompted for 1 outgoing payments)
 * `intermediate balance` (start balance + incoming payments)
 * `end balance` (intermediate balance - outgoing payments)
 
 The proofs are:  
-* `incoming1` + `incoming2` = `total incoming`
-* `outgoing1` + `outgoing2` = `total outgoing`
-* `start balance` + `total incoming` = `intermediate balance`
-* `end balance` + `total outgoing` = `intermediate balance`
+* `start balance` + `incoming` = `intermediate balance`
+* `end balance` + `outgoing` = `intermediate balance`
 
 #### Verify multi-payment proof  
 Verifies the above proofs
