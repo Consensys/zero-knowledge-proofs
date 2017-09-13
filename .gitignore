@@ -11,4 +11,6 @@ provingKey
 generateKeyPair
 generateProof
 proof*
+privateInputParameters
+publicInputParameters
 node_modules/

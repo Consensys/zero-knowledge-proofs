@@ -1,7 +1,6 @@
 var prompt = require('prompt');
 var fs = require('fs');
 
-const {exec} = require( 'child_process' )
 const {spawn} = require('child_process');
 const sha256 = require('sha256')
 
@@ -58,7 +57,8 @@ function handleExecuteProgram(programName, msgStart, msgEnd, msgError, cb){
   })
 
   runCommand.stderr.on('data', (data) => {
-    cb(data.toString())
+    console.log(data.toString())
+    succesfullyCompleted = false
   })
 
   runCommand.on('close', (code) => {
@@ -69,24 +69,6 @@ function handleExecuteProgram(programName, msgStart, msgEnd, msgError, cb){
       cb(null)
     }
   })
-
-/*
-  spawn(programName, (error, stdout, stderr) => {
-    console.log(`stdout: ${stdout}`)
-    if (error) {
-      console.error(`exec error: ${error}`)
-      console.log(msgError)
-      cb(error)
-    } else if(stderr){
-      console.log(`stderr: ${stderr}`)
-      console.log(msgError)
-      cb(msgError)
-    } else {
-      console.log(msgEnd)
-      cb(null)
-    }
-  });
-*/
 }
 
 longToByteArray = function(valueToConvert) {
@@ -102,46 +84,58 @@ longToByteArray = function(valueToConvert) {
   return byteArray;
 }
 
-function generateProofInputs(r1, r2, r3, fileName, cb){
+function getArray(value){
+  var r_value = longToByteArray(value)
+  var arr_salt = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+  return r_value.concat(arr_salt)
+}
 
-  //proof is that r1+r2=r3
-  var arr_r1_value = longToByteArray(r1);
-  var arr_r2_value = longToByteArray(r2);
-  var arr_r3_value = longToByteArray(r3);
+function generateProofInputs(cb){
 
-  var arr_r1_salt = [202, 5, 190, 15, 140, 211, 75, 131, 62, 136, 12, 6, 17, 4, 10, 18];
-  var arr_r2_salt = [6, 171, 218, 43, 241, 15, 217, 251, 205, 248, 0, 21, 86, 194, 100, 94];
-  var arr_r3_salt = [200, 1, 111, 160, 141, 10, 73, 36, 65, 16, 15, 6, 17, 2, 11, 8];
+  var arr_startBalance = getArray(startBalance)
+  var arr_endBalance = getArray(endBalance)
+  var arr_intermediateBalance = getArray(intermediateBalance)
+  var arr_incoming = getArray(incoming)
+  var arr_outgoing = getArray(outgoing)
 
-  var arr_r1 = arr_r1_value.concat(arr_r1_salt);
-  var arr_r2 = arr_r2_value.concat(arr_r2_salt);
-  var arr_r3 = arr_r3_value.concat(arr_r3_salt);
+  var b_startBalance = Buffer.from(arr_startBalance)
+  var b_endBalance = Buffer.from(arr_endBalance)
+  var b_intermediateBalance = Buffer.from(arr_intermediateBalance)
+  var b_incoming = Buffer.from(arr_incoming)
+  var b_outgoing = Buffer.from(arr_outgoing)
 
-  var r1_b = Buffer.from(arr_r1)
-  var r2_b = Buffer.from(arr_r2)
-  var r3_b = Buffer.from(arr_r3)
+  var public_startBalance = sha256(b_startBalance, {asBytes: true})
+  var public_endBalance = sha256(b_endBalance, {asBytes: true})
+  var public_intermediateBalance = sha256(b_intermediateBalance, {asBytes: true})
+  var public_incoming = sha256(b_incoming, {asBytes: true})
+  var public_outgoing = sha256(b_outgoing, {asBytes: true})
 
-  var r1_i = parseInt(r1_b.toString('hex'), 16)
-  var r2_i = parseInt(r2_b.toString('hex'), 16)
-  var r3_i = parseInt(r3_b.toString('hex'), 16)
+  var publicParameters = public_startBalance.toString().replace(/,/g, ' ') + "\n"
+  publicParameters += public_endBalance.toString().replace(/,/g, ' ') + "\n"
+  publicParameters += public_intermediateBalance.toString().replace(/,/g, ' ') + "\n"
+  publicParameters += public_incoming.toString().replace(/,/g, ' ') + "\n"
+  publicParameters += public_outgoing.toString().replace(/,/g, ' ')
 
-  var h1_b = sha256(r1_b, {asBytes: true})
-  var h2_b = sha256(r2_b, {asBytes: true})
-  var h3_b = sha256(r3_b, {asBytes: true})
+  var privateParameters = arr_startBalance.toString().replace(/,/g, ' ') + "\n"
+  privateParameters += arr_endBalance.toString().replace(/,/g, ' ') + "\n"
+  privateParameters += arr_intermediateBalance.toString().replace(/,/g, ' ') + "\n"
+  privateParameters += arr_incoming.toString().replace(/,/g, ' ') + "\n"
+  privateParameters += arr_outgoing.toString().replace(/,/g, ' ')
 
-  var inputParameters = h1_b.toString().replace(/,/g, ' ') + "\n";
-  inputParameters += h2_b.toString().replace(/,/g, ' ') + "\n";
-  inputParameters += h3_b.toString().replace(/,/g, ' ') + "\n";
-  inputParameters += arr_r1.toString().replace(/,/g, ' ') + "\n";
-  inputParameters += arr_r2.toString().replace(/,/g, ' ') + "\n";
-  inputParameters += arr_r3.toString().replace(/,/g, ' ');
-  fs.writeFile(fileName, inputParameters, function(err) {
-    if(err) {
-      cb('An error occured generating the input parameters:',err);
+  fs.writeFile('publicInputParameters', publicParameters, function(errPublic) {
+    if(errPublic) {
+      cb('An error occured generating the public input parameters',errPublic)
     } else {
-      cb('', null);
+      fs.writeFile('privateInputParameters', privateParameters, function(errPrivate) {
+        if(errPrivate) {
+          cb('An error occured generating the private input parameters',errPrivate)
+        } else {
+          cb('', null)
+        }
+      }) 
     }
-  }); 
+  }) 
+
 }
 
 function handleGenerateMultiPaymentProof(cb){
@@ -154,27 +148,16 @@ function handleGenerateMultiPaymentProof(cb){
       intermediateBalance = startBalance + incoming
       endBalance = intermediateBalance - outgoing
 
-      generateProofInputs(startBalance, incoming, intermediateBalance, 'proof1Inputs', function(msg1, err1){
+      generateProofInputs(function(msg1, err1){
         if(err1){
           console.log(msg1, err1)
           cb()
         } else {
-          generateProofInputs(endBalance, outgoing, intermediateBalance, 'proof2Inputs', function(msg2, err2){
-            if(err2){
-              console.log(msg2, err2)
-              cb()
-            } else {
-              handleExecuteProgram('./generateProof', 'Loading Proving Key from file... (this takes a few seconds)', '', 'The proof generation failed\n\n', function(msgGenerateProof){
-                if(msgGenerateProof){
-                  console.log('\n' + msgGenerateProof)
-                  endBalance = startBalance
-                  intermediateBalance = startBalance
-                  incoming = 0
-                  outgoing = 0
-                }
-                cb()
-              })
+          handleExecuteProgram('./generateProof', 'Loading Proving Key from file... (this takes a few seconds)', '', 'The proof generation failed\n\n', function(msgGenerateProof){
+            if(msgGenerateProof){
+              console.log('\n' + msgGenerateProof)
             }
+            cb()
           })
         }
       })
