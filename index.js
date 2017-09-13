@@ -2,15 +2,14 @@ var prompt = require('prompt');
 var fs = require('fs');
 
 const {exec} = require( 'child_process' )
+const {spawn} = require('child_process');
 const sha256 = require('sha256')
 
 var startBalance = 0
 var endBalance = 0
 var intermediateBalance = 0
-var incoming1 = 0
-var incoming2 = 0
-var outgoing1 = 0
-var outgoing2 = 0
+var incoming = 0
+var outgoing = 0
 
 if(process.argv.length!=3){
   console.log("you need to set your start balance.  Run the application using node index.js startBalance=1000")
@@ -25,9 +24,54 @@ process.argv.forEach(function (val, index, array) {
   }
 });
 
+function getMatches(string, regex) {
+  var matches = [];
+  var match;
+  while (match = regex.exec(string)) {
+    matches.push(match[0]);
+  }
+  return matches;
+}
+
 function handleExecuteProgram(programName, msgStart, msgEnd, msgError, cb){
   console.log(msgStart)
-  exec(programName, (error, stdout, stderr) => {
+
+  var succesfullyCompleted=true
+  const runCommand = spawn(programName)
+
+  runCommand.stdout.on('data', (data) => {
+    dataString = data.toString()
+    if(dataString.indexOf('System not satisfied!')>-1){
+      succesfullyCompleted = false
+    }
+    if(data.indexOf('Compute the proof')>-1){
+      if(data.indexOf('(enter)')>-1){
+        console.log('\nProof generation started')
+      } else {
+        var matches = getMatches(dataString, /[0-9].[0-9]*s/g)
+        var noSecs = matches[2]
+        console.log('\nProof generation ended:', noSecs)
+      }
+    } else {
+      process.stdout.write('.')
+    }
+  })
+
+  runCommand.stderr.on('data', (data) => {
+    cb(data.toString())
+  })
+
+  runCommand.on('close', (code) => {
+    console.log()
+    if(code=='1' || !succesfullyCompleted){
+      cb(msgError)
+    } else {
+      cb(null)
+    }
+  })
+
+/*
+  spawn(programName, (error, stdout, stderr) => {
     console.log(`stdout: ${stdout}`)
     if (error) {
       console.error(`exec error: ${error}`)
@@ -42,6 +86,7 @@ function handleExecuteProgram(programName, msgStart, msgEnd, msgError, cb){
       cb(null)
     }
   });
+*/
 }
 
 longToByteArray = function(valueToConvert) {
@@ -102,43 +147,32 @@ function generateProofInputs(r1, r2, r3, fileName, cb){
 function handleGenerateMultiPaymentProof(cb){
   fs.unlink('proof1', function(error) {
   fs.unlink('proof2', function(error) {
-  fs.unlink('proof3', function(error) {
-  fs.unlink('proof4', function(error) {
     console.log('Please enter the amounts that are being paid')
-    prompt.get(['incoming1', 'incoming2', 'outgoing1', 'outgoing2'], function(err, paymentAmountInputs){
-      incoming1 = parseInt(paymentAmountInputs.incoming1)
-      incoming2 = parseInt(paymentAmountInputs.incoming2)
-      outgoing1 = parseInt(paymentAmountInputs.outgoing1)
-      outgoing2 = parseInt(paymentAmountInputs.outgoing2)
-      intermediateBalance = startBalance + incoming1 + incoming2
-      endBalance = intermediateBalance - outgoing1 - outgoing2
+    prompt.get(['incoming', 'outgoing'], function(err, paymentAmountInputs){
+      incoming = parseInt(paymentAmountInputs.incoming)
+      outgoing = parseInt(paymentAmountInputs.outgoing)
+      intermediateBalance = startBalance + incoming
+      endBalance = intermediateBalance - outgoing
 
-      generateProofInputs(startBalance, (incoming1 + incoming2), intermediateBalance, 'proof1Inputs', function(msg1, err1){
+      generateProofInputs(startBalance, incoming, intermediateBalance, 'proof1Inputs', function(msg1, err1){
         if(err1){
           console.log(msg1, err1)
           cb()
         } else {
-          generateProofInputs(endBalance, (outgoing1 + outgoing2), intermediateBalance, 'proof2Inputs', function(msg2, err2){
+          generateProofInputs(endBalance, outgoing, intermediateBalance, 'proof2Inputs', function(msg2, err2){
             if(err2){
               console.log(msg2, err2)
               cb()
             } else {
-              generateProofInputs(incoming1, incoming2, (incoming1 + incoming2), 'proof3Inputs', function(msg3, err3){
-                if(err3){
-                  console.log(msg3, err3)
-                  cb()
-                } else {
-                  generateProofInputs(outgoing1, outgoing2, (outgoing1 + outgoing2), 'proof4Inputs', function(msg4, err4){
-                    if(err4){
-                      console.log(msg4, err4)
-                      cb()
-                    } else {
-                      handleExecuteProgram('./generateProof', 'Loading Proving Key from file... (this takes a few seconds)', '', 'The proof generation failed\n\n', function(){
-                        cb()
-                      })
-                    }
-                  })
+              handleExecuteProgram('./generateProof', 'Loading Proving Key from file... (this takes a few seconds)', '', 'The proof generation failed\n\n', function(msgGenerateProof){
+                if(msgGenerateProof){
+                  console.log('\n' + msgGenerateProof)
+                  endBalance = startBalance
+                  intermediateBalance = startBalance
+                  incoming = 0
+                  outgoing = 0
                 }
+                cb()
               })
             }
           })
@@ -147,14 +181,12 @@ function handleGenerateMultiPaymentProof(cb){
     })
   })
   })
-  })
-  })
 }
 
 function handleInput(){
   console.log('Start balance:', startBalance)
-  console.log('Total incoming payments:', (incoming1 + incoming2))
-  console.log('Total outgoing payments:', (outgoing1 + outgoing2))
+  console.log('Total incoming payments:', incoming)
+  console.log('Total outgoing payments:', outgoing)
   console.log('End balance:', endBalance)
   console.log('')
   console.log('Please select an option:\n1) Create a new key pair\n2) Generate a multi-payment proof\n3) Verify multi-payment proof\n0) Quit')
@@ -176,10 +208,8 @@ function handleInput(){
           console.log('Verification was succesful')
           startBalance = endBalance
           intermediateBalance = endBalance
-          incoming1 = 0
-          incoming2 = 0
-          outgoing1 = 0
-          outgoing2 = 0
+          incoming = 0
+          outgoing = 0
           
           handleInput()
         }
