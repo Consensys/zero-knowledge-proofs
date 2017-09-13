@@ -94,7 +94,7 @@ function generateProofInputs(r1, r2, r3, fileName, cb){
     if(err) {
       cb('An error occured generating the input parameters:',err);
     } else {
-      cb('The input parameters were succesfully generated and saved to the file: ' + fileName, null);
+      cb('', null);
     }
   }); 
 }
@@ -118,28 +118,21 @@ function handleGenerateMultiPaymentProof(cb){
           console.log(msg1, err1)
           cb()
         } else {
-          console.log(msg1)
-
           generateProofInputs(endBalance, (outgoing1 + outgoing2), intermediateBalance, 'proof2Inputs', function(msg2, err2){
             if(err2){
               console.log(msg2, err2)
               cb()
             } else {
-              console.log(msg2)
-
               generateProofInputs(incoming1, incoming2, (incoming1 + incoming2), 'proof3Inputs', function(msg3, err3){
                 if(err3){
                   console.log(msg3, err3)
                   cb()
                 } else {
-                  console.log(msg3)
-
                   generateProofInputs(outgoing1, outgoing2, (outgoing1 + outgoing2), 'proof4Inputs', function(msg4, err4){
                     if(err4){
                       console.log(msg4, err4)
                       cb()
                     } else {
-                      console.log(msg4)
                       handleExecuteProgram('./generateProof', 'Loading Proving Key from file... (this takes a few seconds)', '', 'The proof generation failed\n\n', function(){
                         cb()
                       })
