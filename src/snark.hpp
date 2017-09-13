@@ -29,9 +29,13 @@ boost::optional<r1cs_ppzksnark_proof<ppzksnark_ppT>> generate_proof(r1cs_ppzksna
                                                                    const bit_vector &h1,
                                                                    const bit_vector &h2,
                                                                    const bit_vector &h3,
+                                                                   const bit_vector &h4,
+                                                                   const bit_vector &h5,
                                                                    const bit_vector &r1,
                                                                    const bit_vector &r2,
-                                                                   const bit_vector &r3
+                                                                   const bit_vector &r3,
+                                                                   const bit_vector &r4,
+                                                                   const bit_vector &r5
                                                                    )
 {
     typedef Fr<ppzksnark_ppT> FieldT;
@@ -39,7 +43,7 @@ boost::optional<r1cs_ppzksnark_proof<ppzksnark_ppT>> generate_proof(r1cs_ppzksna
     protoboard<FieldT> pb;
     l_gadget<FieldT> g(pb);
     g.generate_r1cs_constraints();
-    g.generate_r1cs_witness(h1, h2, h3, r1, r2, r3);
+    g.generate_r1cs_witness(h1, h2, h3, h4, h5, r1, r2, r3, r4, r5);
 
     if (!pb.is_satisfied()) {
       std::cout << "System not satisfied!" << std::endl;
@@ -54,12 +58,14 @@ bool verify_proof(r1cs_ppzksnark_verification_key<ppzksnark_ppT> verification_ke
                   r1cs_ppzksnark_proof<ppzksnark_ppT> proof,
                   const bit_vector &h1,
                   const bit_vector &h2,
-                  const bit_vector &h3
+                  const bit_vector &h3,
+                  const bit_vector &h4,
+                  const bit_vector &h5
                  )
 {
     typedef Fr<ppzksnark_ppT> FieldT;
 
-    const r1cs_primary_input<FieldT> input = l_input_map<FieldT>(h1, h2, h3);
+    const r1cs_primary_input<FieldT> input = l_input_map<FieldT>(h1, h2, h3, h4, h5);
 
     std::cout << "**** After l_input_map *****" << std::endl;
 
