@@ -8,10 +8,9 @@ libsnark
 verifyProof
 verificationKey
 provingKey
-sendProof
-receiveProof
 generateKeyPair
 generateProof
-sendProofInputs
-receiveProofInputs
+proof*
+privateInputParameters
+publicInputParameters
 node_modules/

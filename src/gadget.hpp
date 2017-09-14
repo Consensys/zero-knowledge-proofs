@@ -46,16 +46,22 @@ public:
     pb_variable_array<FieldT> intermediate_val1;
     pb_variable_array<FieldT> intermediate_val2;
     pb_variable_array<FieldT> intermediate_val3;
+    pb_variable_array<FieldT> intermediate_val4;
+    pb_variable_array<FieldT> intermediate_val5;
 
     std::shared_ptr<multipacking_gadget<FieldT> > unpack_inputs; /* multipacking gadget */
 
     std::shared_ptr<digest_variable<FieldT>> h1_var; /* H(R1) */
     std::shared_ptr<digest_variable<FieldT>> h2_var; /* H(R2) */
-    std::shared_ptr<digest_variable<FieldT>> h3_var; /* H(R2) */
+    std::shared_ptr<digest_variable<FieldT>> h3_var; /* H(R3) */
+    std::shared_ptr<digest_variable<FieldT>> h4_var; /* H(R4) */
+    std::shared_ptr<digest_variable<FieldT>> h5_var; /* H(R5) */
 
     std::shared_ptr<digest_variable<FieldT>> r1_var; /* R1 */
     std::shared_ptr<digest_variable<FieldT>> r2_var; /* R2 */
     std::shared_ptr<digest_variable<FieldT>> r3_var; /* R3 */
+    std::shared_ptr<digest_variable<FieldT>> r4_var; /* R4 */
+    std::shared_ptr<digest_variable<FieldT>> r5_var; /* R5 */
 
     std::shared_ptr<block_variable<FieldT>> h_r1_block; /* 512 bit block that contains r1 + padding */
     std::shared_ptr<sha256_compression_function_gadget<FieldT>> h_r1; /* hashing gadget for r1 */
@@ -66,6 +72,12 @@ public:
     std::shared_ptr<block_variable<FieldT>> h_r3_block; /* 512 bit block that contains r3 + padding */
     std::shared_ptr<sha256_compression_function_gadget<FieldT>> h_r3; /* hashing gadget for r3 */
 
+    std::shared_ptr<block_variable<FieldT>> h_r4_block; /* 512 bit block that contains r4 + padding */
+    std::shared_ptr<sha256_compression_function_gadget<FieldT>> h_r4; /* hashing gadget for r4 */
+
+    std::shared_ptr<block_variable<FieldT>> h_r5_block; /* 512 bit block that contains r5 + padding */
+    std::shared_ptr<sha256_compression_function_gadget<FieldT>> h_r5; /* hashing gadget for r5 */
+
 
     pb_variable<FieldT> zero;
     pb_variable_array<FieldT> padding_var; /* SHA256 length padding */
@@ -74,7 +86,7 @@ public:
     l_gadget(protoboard<FieldT> &pb) : gadget<FieldT>(pb, "l_gadget")
     {
         // Allocate space for the verifier input.
-        const size_t input_size_in_bits = sha256_digest_len * 3;
+        const size_t input_size_in_bits = sha256_digest_len * 5;
         {
             // We use a "multipacking" technique which allows us to constrain
             // the input bits in as few field elements as possible.
@@ -91,6 +103,8 @@ public:
         intermediate_val1.allocate(this->pb, sha256_digest_len/2, "intermediate_val1");
         intermediate_val2.allocate(this->pb, sha256_digest_len/2, "intermediate_val2");
         intermediate_val3.allocate(this->pb, sha256_digest_len/2, "intermediate_val3");
+        intermediate_val4.allocate(this->pb, sha256_digest_len/2, "intermediate_val4");
+        intermediate_val5.allocate(this->pb, sha256_digest_len/2, "intermediate_val5");
 
 
         // SHA256's length padding
@@ -105,10 +119,14 @@ public:
         h1_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len, "h1"));
         h2_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len, "h2"));
         h3_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len, "h3"));
+        h4_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len, "h4"));
+        h5_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len, "h5"));
 
         input_as_bits.insert(input_as_bits.end(), h1_var->bits.begin(), h1_var->bits.end());
         input_as_bits.insert(input_as_bits.end(), h2_var->bits.begin(), h2_var->bits.end());
         input_as_bits.insert(input_as_bits.end(), h3_var->bits.begin(), h3_var->bits.end());
+        input_as_bits.insert(input_as_bits.end(), h4_var->bits.begin(), h4_var->bits.end());
+        input_as_bits.insert(input_as_bits.end(), h5_var->bits.begin(), h5_var->bits.end());
 
         // Multipacking
         assert(input_as_bits.size() == input_size_in_bits);
@@ -118,6 +136,8 @@ public:
         r1_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len, "r1"));
         r2_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len, "r2"));
         r3_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len, "r3"));
+        r4_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len, "r4"));
+        r5_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len, "r5"));
 
         // IV for SHA256
         pb_linear_combination_array<FieldT> IV = SHA256_default_IV(pb);
@@ -161,6 +181,32 @@ public:
                                                                   *h3_var,
                                                                   "h_r3"));
 
+        // Initialize the block gadget for r4's hash
+        h_r4_block.reset(new block_variable<FieldT>(pb, {
+            r4_var->bits,
+            padding_var
+        }, "h_r4_block"));
+
+        // Initialize the hash gadget for r4's hash
+        h_r4.reset(new sha256_compression_function_gadget<FieldT>(pb,
+                                                                  IV,
+                                                                  h_r4_block->bits,
+                                                                  *h4_var,
+                                                                  "h_r4"));
+
+        // Initialize the block gadget for r5's hash
+        h_r5_block.reset(new block_variable<FieldT>(pb, {
+            r5_var->bits,
+            padding_var
+        }, "h_r5_block"));
+
+        // Initialize the hash gadget for r5's hash
+        h_r5.reset(new sha256_compression_function_gadget<FieldT>(pb,
+                                                                  IV,
+                                                                  h_r5_block->bits,
+                                                                  *h5_var,
+                                                                  "h_r5"));
+
 
 
     }
@@ -174,6 +220,8 @@ public:
         r1_var->generate_r1cs_constraints();
         r2_var->generate_r1cs_constraints();
         r3_var->generate_r1cs_constraints();
+        r4_var->generate_r1cs_constraints();
+        r5_var->generate_r1cs_constraints();
 
         generate_r1cs_equals_const_constraint<FieldT>(this->pb, zero, FieldT::zero(), "zero");
 
@@ -200,6 +248,20 @@ public:
                     1, 
                     r3_var->bits[0]),
                 FMT(this->annotation_prefix, " zero3_%zu", 0));
+
+            this->pb.add_r1cs_constraint(
+                r1cs_constraint<FieldT>(
+                    intermediate_val4[0],
+                    1, 
+                    r4_var->bits[0]),
+                FMT(this->annotation_prefix, " zero4_%zu", 0));
+
+            this->pb.add_r1cs_constraint(
+                r1cs_constraint<FieldT>(
+                    intermediate_val5[0],
+                    1, 
+                    r5_var->bits[0]),
+                FMT(this->annotation_prefix, " zero5_%zu", 0));
             
 
         for (unsigned int i = 1; i < NN; i++) {
@@ -227,15 +289,37 @@ public:
                     { 1 }, 
                     { intermediate_val3[i-1] * 2, r3_var->bits[i] }), 
                 FMT(this->annotation_prefix, " sum3_%zu", i));
+
+            this->pb.add_r1cs_constraint(
+                r1cs_constraint<FieldT>(
+                    { intermediate_val4[i] },
+                    { 1 }, 
+                    { intermediate_val4[i-1] * 2, r4_var->bits[i] }), 
+                FMT(this->annotation_prefix, " sum4_%zu", i));
+
+            this->pb.add_r1cs_constraint(
+                r1cs_constraint<FieldT>(
+                    { intermediate_val5[i] },
+                    { 1 }, 
+                    { intermediate_val5[i-1] * 2, r5_var->bits[i] }), 
+                FMT(this->annotation_prefix, " sum5_%zu", i));
         }
 
 
-        // Constraint that r3 = r1 + r2
+        // Constraint that r3 = r1 + r4 (int bal = start bal + incoming)
             this->pb.add_r1cs_constraint(
                 r1cs_constraint<FieldT>(
                     { intermediate_val3[NN-1] },
                     { 1 },
-                    { intermediate_val1[NN-1], intermediate_val2[NN-1]}), 
+                    { intermediate_val1[NN-1], intermediate_val4[NN-1]}), 
+                FMT(this->annotation_prefix, "finalsum_%zu", 0));
+        
+        // Constraint that r3 = r2 + r5 (int bal = end bal + outgoing)
+            this->pb.add_r1cs_constraint(
+                r1cs_constraint<FieldT>(
+                    { intermediate_val3[NN-1] },
+                    { 1 },
+                    { intermediate_val2[NN-1], intermediate_val5[NN-1]}), 
                 FMT(this->annotation_prefix, "finalsum_%zu", 0));
         
 
@@ -243,40 +327,56 @@ public:
         h_r1->generate_r1cs_constraints();
         h_r2->generate_r1cs_constraints();
         h_r3->generate_r1cs_constraints();
+        h_r4->generate_r1cs_constraints();
+        h_r5->generate_r1cs_constraints();
     }
 
     void generate_r1cs_witness(const bit_vector &h1,
                                const bit_vector &h2,
                                const bit_vector &h3,
+                               const bit_vector &h4,
+                               const bit_vector &h5,
                                const bit_vector &r1,
                                const bit_vector &r2,
-                               const bit_vector &r3
+                               const bit_vector &r3,
+                               const bit_vector &r4,
+                               const bit_vector &r5
                               )
     {
         // Fill our digests with our witnessed data
         r1_var->bits.fill_with_bits(this->pb, r1);
         r2_var->bits.fill_with_bits(this->pb, r2);
         r3_var->bits.fill_with_bits(this->pb, r3);
+        r4_var->bits.fill_with_bits(this->pb, r4);
+        r5_var->bits.fill_with_bits(this->pb, r5);
         
         size_t NN = sha256_digest_len/2;
         
         std::vector<FieldT> interm1(NN);
         std::vector<FieldT> interm2(NN);
         std::vector<FieldT> interm3(NN);
+        std::vector<FieldT> interm4(NN);
+        std::vector<FieldT> interm5(NN);
 
         interm1[0] = r1[0] ? FieldT::one() : FieldT::zero();
         interm2[0] = r2[0] ? FieldT::one() : FieldT::zero();
         interm3[0] = r3[0] ? FieldT::one() : FieldT::zero();
+        interm4[0] = r4[0] ? FieldT::one() : FieldT::zero();
+        interm5[0] = r5[0] ? FieldT::one() : FieldT::zero();
 
         for (size_t i=1; i<NN; i++) {
           interm1[i] = interm1[i-1] * 2 + (r1[i] ? FieldT::one() : FieldT::zero());
           interm2[i] = interm2[i-1] * 2 + (r2[i] ? FieldT::one() : FieldT::zero());
           interm3[i] = interm3[i-1] * 2 + (r3[i] ? FieldT::one() : FieldT::zero());
+          interm4[i] = interm4[i-1] * 2 + (r4[i] ? FieldT::one() : FieldT::zero());
+          interm5[i] = interm5[i-1] * 2 + (r5[i] ? FieldT::one() : FieldT::zero());
         }
 
         intermediate_val1.fill_with_field_elements(this->pb, interm1);
         intermediate_val2.fill_with_field_elements(this->pb, interm2);
         intermediate_val3.fill_with_field_elements(this->pb, interm3);
+        intermediate_val4.fill_with_field_elements(this->pb, interm4);
+        intermediate_val5.fill_with_field_elements(this->pb, interm5);
 
         // Set the zero pb_variable to zero
         this->pb.val(zero) = FieldT::zero();
@@ -285,18 +385,24 @@ public:
         h_r1->generate_r1cs_witness();
         h_r2->generate_r1cs_witness();
         h_r3->generate_r1cs_witness();
+        h_r4->generate_r1cs_witness();
+        h_r5->generate_r1cs_witness();
         unpack_inputs->generate_r1cs_witness_from_bits();
 
         h1_var->bits.fill_with_bits(this->pb, h1);
         h2_var->bits.fill_with_bits(this->pb, h2);
         h3_var->bits.fill_with_bits(this->pb, h3);
+        h4_var->bits.fill_with_bits(this->pb, h4);
+        h5_var->bits.fill_with_bits(this->pb, h5);
     }
 };
 
 template<typename FieldT>
 r1cs_primary_input<FieldT> l_input_map(const bit_vector &h1,
                                        const bit_vector &h2,
-                                       const bit_vector &h3
+                                       const bit_vector &h3,
+                                       const bit_vector &h4,
+                                       const bit_vector &h5
                                             )
 {
     // Construct the multipacked field points which encode
@@ -306,6 +412,8 @@ r1cs_primary_input<FieldT> l_input_map(const bit_vector &h1,
     assert(h1.size() == sha256_digest_len);
     assert(h2.size() == sha256_digest_len);
     assert(h3.size() == sha256_digest_len);
+    assert(h4.size() == sha256_digest_len);
+    assert(h5.size() == sha256_digest_len);
 
     std::cout << "**** After assert(size() == sha256_digest_len) *****" << std::endl;
 
@@ -313,6 +421,8 @@ r1cs_primary_input<FieldT> l_input_map(const bit_vector &h1,
     input_as_bits.insert(input_as_bits.end(), h1.begin(), h1.end());
     input_as_bits.insert(input_as_bits.end(), h2.begin(), h2.end());
     input_as_bits.insert(input_as_bits.end(), h3.begin(), h3.end());
+    input_as_bits.insert(input_as_bits.end(), h4.begin(), h4.end());
+    input_as_bits.insert(input_as_bits.end(), h5.begin(), h5.end());
     std::vector<FieldT> input_as_field_elements = pack_bit_vector_into_field_element_vector<FieldT>(input_as_bits);
 
     std::cout << "**** After pack_bit_vector_into_field_element_vector *****" << std::endl;
