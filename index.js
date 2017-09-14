@@ -6,7 +6,6 @@ const sha256 = require('sha256')
 
 var startBalance = 0
 var endBalance = 0
-var intermediateBalance = 0
 var incoming = 0
 var outgoing = 0
 
@@ -18,7 +17,6 @@ if(process.argv.length!=3){
 process.argv.forEach(function (val, index, array) {
   if(val.startsWith("startBalance")){
     startBalance = parseInt(val.split("=")[1])
-    intermediateBalance = startBalance
     endBalance = startBalance
   }
 });
@@ -94,31 +92,26 @@ function generateProofInputs(cb){
 
   var arr_startBalance = getArray(startBalance)
   var arr_endBalance = getArray(endBalance)
-  var arr_intermediateBalance = getArray(intermediateBalance)
   var arr_incoming = getArray(incoming)
   var arr_outgoing = getArray(outgoing)
 
   var b_startBalance = Buffer.from(arr_startBalance)
   var b_endBalance = Buffer.from(arr_endBalance)
-  var b_intermediateBalance = Buffer.from(arr_intermediateBalance)
   var b_incoming = Buffer.from(arr_incoming)
   var b_outgoing = Buffer.from(arr_outgoing)
 
   var public_startBalance = sha256(b_startBalance, {asBytes: true})
   var public_endBalance = sha256(b_endBalance, {asBytes: true})
-  var public_intermediateBalance = sha256(b_intermediateBalance, {asBytes: true})
   var public_incoming = sha256(b_incoming, {asBytes: true})
   var public_outgoing = sha256(b_outgoing, {asBytes: true})
 
   var publicParameters = public_startBalance.toString().replace(/,/g, ' ') + "\n"
   publicParameters += public_endBalance.toString().replace(/,/g, ' ') + "\n"
-  publicParameters += public_intermediateBalance.toString().replace(/,/g, ' ') + "\n"
   publicParameters += public_incoming.toString().replace(/,/g, ' ') + "\n"
   publicParameters += public_outgoing.toString().replace(/,/g, ' ')
 
   var privateParameters = arr_startBalance.toString().replace(/,/g, ' ') + "\n"
   privateParameters += arr_endBalance.toString().replace(/,/g, ' ') + "\n"
-  privateParameters += arr_intermediateBalance.toString().replace(/,/g, ' ') + "\n"
   privateParameters += arr_incoming.toString().replace(/,/g, ' ') + "\n"
   privateParameters += arr_outgoing.toString().replace(/,/g, ' ')
 
@@ -145,8 +138,7 @@ function handleGenerateMultiPaymentProof(cb){
     prompt.get(['incoming', 'outgoing'], function(err, paymentAmountInputs){
       incoming = parseInt(paymentAmountInputs.incoming)
       outgoing = parseInt(paymentAmountInputs.outgoing)
-      intermediateBalance = startBalance + incoming
-      endBalance = intermediateBalance - outgoing
+      endBalance = startBalance + incoming - outgoing
 
       generateProofInputs(function(msg1, err1){
         if(err1){
@@ -190,7 +182,6 @@ function handleInput(){
         } else {
           console.log('Verification was succesful')
           startBalance = endBalance
-          intermediateBalance = endBalance
           incoming = 0
           outgoing = 0
           
