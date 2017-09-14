@@ -53,15 +53,15 @@ public:
 
     std::shared_ptr<digest_variable<FieldT>> h1_var; /* H(R1) */
     std::shared_ptr<digest_variable<FieldT>> h2_var; /* H(R2) */
-    std::shared_ptr<digest_variable<FieldT>> h3_var; /* H(R2) */
-    std::shared_ptr<digest_variable<FieldT>> h4_var; /* H(R2) */
-    std::shared_ptr<digest_variable<FieldT>> h5_var; /* H(R2) */
+    std::shared_ptr<digest_variable<FieldT>> h3_var; /* H(R3) */
+    std::shared_ptr<digest_variable<FieldT>> h4_var; /* H(R4) */
+    std::shared_ptr<digest_variable<FieldT>> h5_var; /* H(R5) */
 
     std::shared_ptr<digest_variable<FieldT>> r1_var; /* R1 */
     std::shared_ptr<digest_variable<FieldT>> r2_var; /* R2 */
     std::shared_ptr<digest_variable<FieldT>> r3_var; /* R3 */
-    std::shared_ptr<digest_variable<FieldT>> r4_var; /* R3 */
-    std::shared_ptr<digest_variable<FieldT>> r5_var; /* R3 */
+    std::shared_ptr<digest_variable<FieldT>> r4_var; /* R4 */
+    std::shared_ptr<digest_variable<FieldT>> r5_var; /* R5 */
 
     std::shared_ptr<block_variable<FieldT>> h_r1_block; /* 512 bit block that contains r1 + padding */
     std::shared_ptr<sha256_compression_function_gadget<FieldT>> h_r1; /* hashing gadget for r1 */
