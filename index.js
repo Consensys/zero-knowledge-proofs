@@ -145,7 +145,7 @@ function handleGenerateMultiPaymentProof(cb){
           console.log(msg1, err1)
           cb()
         } else {
-          handleExecuteProgram('./generateProof', 'Loading Proving Key from file... (this takes a few seconds)', '', 'The proof generation failed\n\n', function(msgGenerateProof){
+          handleExecuteProgram('./payment_in_out_proof_generator', 'Loading Proving Key from file... (this takes a few seconds)', '', 'The proof generation failed\n\n', function(msgGenerateProof){
             if(msgGenerateProof){
               console.log('\n' + msgGenerateProof)
             }
@@ -167,7 +167,7 @@ function handleInput(){
   console.log('Please select an option:\n1) Create a new key pair\n2) Generate a multi-payment proof\n3) Verify multi-payment proof\n0) Quit')
   prompt.get(['option'], function(err, answer){
     if(answer.option == 1){
-      handleExecuteProgram('./generateKeyPair', 'Generating key pair...', 'The key pair has been generated and the keys written to files (provingKey and verificationKey)', 'The key pair failed\n\n', function(){
+      handleExecuteProgram('./payment_in_out_keypair_generator', 'Generating key pair...', 'The key pair has been generated and the keys written to files (provingKey and verificationKey)', 'The key pair failed\n\n', function(){
         handleInput()
       })
     } else if (answer.option == 2){
@@ -175,7 +175,7 @@ function handleInput(){
         handleInput()
       })
     } else if(answer.option == 3){
-      handleExecuteProgram('./verifyProof', '', '', 'The proof verification failed\n\n', function(verifyErr){
+      handleExecuteProgram('./payment_in_out_proof_verifier', '', '', 'The proof verification failed\n\n', function(verifyErr){
         if(verifyErr){
           console.log(verifyErr)
           handleInput()
