@@ -12,12 +12,12 @@ LDLIBS += -L$(INSTALLDIR)/usr/local/lib/ -lsnark -lff -lgmpxx -lgmp
 LDLIBS += -lboost_system
 
 all:
-	$(CXX) -o generateKeyPair.o src/generateKeyPair.cpp -c $(CXXFLAGS) $(LIBSNARK_FLAGS) $(OPTFLAGS)
-	$(CXX) -o generateKeyPair generateKeyPair.o $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
-	$(CXX) -o generateProof.o src/generateProof.cpp -c $(CXXFLAGS) $(LIBSNARK_FLAGS) $(OPTFLAGS)
-	$(CXX) -o generateProof generateProof.o $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
-	$(CXX) -o verifyProof.o src/verifyProof.cpp -c $(CXXFLAGS) $(LIBSNARK_FLAGS) $(OPTFLAGS)
-	$(CXX) -o verifyProof verifyProof.o $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
+	$(CXX) -o payment_in_out_keypair_generator.o src/payment_in_out_keypair_generator.cpp -c $(CXXFLAGS) $(LIBSNARK_FLAGS) $(OPTFLAGS)
+	$(CXX) -o payment_in_out_keypair_generator payment_in_out_keypair_generator.o $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
+	$(CXX) -o payment_in_out_proof_generator.o src/payment_in_out_proof_generator.cpp -c $(CXXFLAGS) $(LIBSNARK_FLAGS) $(OPTFLAGS)
+	$(CXX) -o payment_in_out_proof_generator payment_in_out_proof_generator.o $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
+	$(CXX) -o payment_in_out_proof_verifier.o src/payment_in_out_proof_verifier.cpp -c $(CXXFLAGS) $(LIBSNARK_FLAGS) $(OPTFLAGS)
+	$(CXX) -o payment_in_out_proof_verifier payment_in_out_proof_verifier.o $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
 #	$(CXX) -o test.o src/test.cpp -c $(CXXFLAGS) $(LIBSNARK_FLAGS) $(OPTFLAGS)
 #	$(CXX) -o test test.o $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
 

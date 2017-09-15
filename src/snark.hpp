@@ -7,7 +7,7 @@
 using namespace libsnark;
 using namespace std;
 
-#include "gadget.hpp"
+#include "payment_in_out_gadget.hpp"
 
 template<typename ppzksnark_ppT>
 r1cs_ppzksnark_keypair<ppzksnark_ppT> generate_keypair()
@@ -15,8 +15,8 @@ r1cs_ppzksnark_keypair<ppzksnark_ppT> generate_keypair()
     typedef Fr<ppzksnark_ppT> FieldT;
 
     protoboard<FieldT> pb;
-    l_gadget<FieldT> g(pb);
-    g.generate_r1cs_constraints();
+    payment_in_out_gadget<FieldT> g(pb);
+    g.generate_payment_in_out_constraints();
     const r1cs_constraint_system<FieldT> constraint_system = pb.get_constraint_system();
 
     cout << "Number of R1CS constraints: " << constraint_system.num_constraints() << endl;
@@ -39,9 +39,9 @@ boost::optional<r1cs_ppzksnark_proof<ppzksnark_ppT>> generate_payment_in_out_pro
     typedef Fr<ppzksnark_ppT> FieldT;
 
     protoboard<FieldT> pb;
-    l_gadget<FieldT> g(pb);
-    g.generate_r1cs_constraints();
-    g.generate_r1cs_witness(h_startbalance, h_endbalance, h_incoming, h_outgoing, r_startbalance, r_endbalance, r_incoming, r_outgoing);
+    payment_in_out_gadget<FieldT> g(pb);
+    g.generate_payment_in_out_constraints();
+    g.generate_payment_in_out_witness(h_startbalance, h_endbalance, h_incoming, h_outgoing, r_startbalance, r_endbalance, r_incoming, r_outgoing);
 
     if (!pb.is_satisfied()) {
       std::cout << "System not satisfied!" << std::endl;
