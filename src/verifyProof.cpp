@@ -33,19 +33,19 @@ int verifyProof(r1cs_ppzksnark_verification_key<default_r1cs_ppzksnark_pp> verif
   proofFromFile >> proof_in;
   
   // Hashes to validate against
-  std::vector<bool> h1_bv(256);
-  std::vector<bool> h2_bv(256);
-  std::vector<bool> h3_bv(256);
-  std::vector<bool> h4_bv(256);
+  std::vector<bool> h_startBalance_bv(256);
+  std::vector<bool> h_endBalance_bv(256);
+  std::vector<bool> h_incoming_bv(256);
+  std::vector<bool> h_outgoing_bv(256);
   vector<vector<unsigned long int>> values = fillValuesFromfile("publicInputParameters");
-  h1_bv = int_list_to_bits_local(values[0], 8);
-  h2_bv = int_list_to_bits_local(values[1], 8);
-  h3_bv = int_list_to_bits_local(values[2], 8);
-  h4_bv = int_list_to_bits_local(values[3], 8);
+  h_startBalance_bv = int_list_to_bits_local(values[0], 8);
+  h_endBalance_bv = int_list_to_bits_local(values[1], 8);
+  h_incoming_bv = int_list_to_bits_local(values[2], 8);
+  h_outgoing_bv = int_list_to_bits_local(values[3], 8);
 
   cout << "proof read ... starting verification" << endl;
   // Verify the proof
-  bool isVerified = verify_proof(verificationKey_in, *proof_in, h1_bv, h2_bv, h3_bv, h4_bv);
+  bool isVerified = verify_payment_in_out_proof(verificationKey_in, *proof_in, h_startBalance_bv, h_endBalance_bv, h_incoming_bv, h_outgoing_bv);
 
   if(isVerified){
     cout << "Proof was verified!!" << endl;

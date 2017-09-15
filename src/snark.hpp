@@ -25,15 +25,15 @@ r1cs_ppzksnark_keypair<ppzksnark_ppT> generate_keypair()
 }
 
 template<typename ppzksnark_ppT>
-boost::optional<r1cs_ppzksnark_proof<ppzksnark_ppT>> generate_proof(r1cs_ppzksnark_proving_key<ppzksnark_ppT> proving_key,
-                                                                   const bit_vector &h1,
-                                                                   const bit_vector &h2,
-                                                                   const bit_vector &h3,
-                                                                   const bit_vector &h4,
-                                                                   const bit_vector &r1,
-                                                                   const bit_vector &r2,
-                                                                   const bit_vector &r3,
-                                                                   const bit_vector &r4
+boost::optional<r1cs_ppzksnark_proof<ppzksnark_ppT>> generate_payment_in_out_proof(r1cs_ppzksnark_proving_key<ppzksnark_ppT> proving_key,
+                                                                   const bit_vector &h_startbalance,
+                                                                   const bit_vector &h_endbalance,
+                                                                   const bit_vector &h_incoming,
+                                                                   const bit_vector &h_outgoing,
+                                                                   const bit_vector &r_startbalance,
+                                                                   const bit_vector &r_endbalance,
+                                                                   const bit_vector &r_incoming,
+                                                                   const bit_vector &r_outgoing
                                                                    )
 {
     typedef Fr<ppzksnark_ppT> FieldT;
@@ -41,7 +41,7 @@ boost::optional<r1cs_ppzksnark_proof<ppzksnark_ppT>> generate_proof(r1cs_ppzksna
     protoboard<FieldT> pb;
     l_gadget<FieldT> g(pb);
     g.generate_r1cs_constraints();
-    g.generate_r1cs_witness(h1, h2, h3, h4, r1, r2, r3, r4);
+    g.generate_r1cs_witness(h_startbalance, h_endbalance, h_incoming, h_outgoing, r_startbalance, r_endbalance, r_incoming, r_outgoing);
 
     if (!pb.is_satisfied()) {
       std::cout << "System not satisfied!" << std::endl;
@@ -52,17 +52,17 @@ boost::optional<r1cs_ppzksnark_proof<ppzksnark_ppT>> generate_proof(r1cs_ppzksna
 }
 
 template<typename ppzksnark_ppT>
-bool verify_proof(r1cs_ppzksnark_verification_key<ppzksnark_ppT> verification_key,
+bool verify_payment_in_out_proof(r1cs_ppzksnark_verification_key<ppzksnark_ppT> verification_key,
                   r1cs_ppzksnark_proof<ppzksnark_ppT> proof,
-                  const bit_vector &h1,
-                  const bit_vector &h2,
-                  const bit_vector &h3,
-                  const bit_vector &h4
+                  const bit_vector &h_startbalance,
+                  const bit_vector &h_endbalance,
+                  const bit_vector &h_incoming,
+                  const bit_vector &h_outgoing
                  )
 {
     typedef Fr<ppzksnark_ppT> FieldT;
 
-    const r1cs_primary_input<FieldT> input = l_input_map<FieldT>(h1, h2, h3, h4);
+    const r1cs_primary_input<FieldT> input = l_input_map<FieldT>(h_startbalance, h_endbalance, h_incoming, h_outgoing);
 
     std::cout << "**** After l_input_map *****" << std::endl;
 
