@@ -6,8 +6,10 @@ const sha256 = require('sha256')
 
 var startBalance = 0
 var endBalance = 0
-var incoming = 0
-var outgoing = 0
+var incoming1 = 0
+var incoming2 = 0
+var outgoing1 = 0
+var outgoing2 = 0
 
 if(process.argv.length!=3){
   console.log("you need to set your start balance.  Run the application using node index.js startBalance=1000")
@@ -92,28 +94,38 @@ function generateProofInputs(cb){
 
   var arr_startBalance = getArray(startBalance)
   var arr_endBalance = getArray(endBalance)
-  var arr_incoming = getArray(incoming)
-  var arr_outgoing = getArray(outgoing)
+  var arr_incoming1 = getArray(incoming1)
+  var arr_incoming2 = getArray(incoming2)
+  var arr_outgoing1 = getArray(outgoing1)
+  var arr_outgoing2 = getArray(outgoing2)
 
   var b_startBalance = Buffer.from(arr_startBalance)
   var b_endBalance = Buffer.from(arr_endBalance)
-  var b_incoming = Buffer.from(arr_incoming)
-  var b_outgoing = Buffer.from(arr_outgoing)
+  var b_incoming1 = Buffer.from(arr_incoming1)
+  var b_incoming2 = Buffer.from(arr_incoming2)
+  var b_outgoing1 = Buffer.from(arr_outgoing1)
+  var b_outgoing2 = Buffer.from(arr_outgoing2)
 
   var public_startBalance = sha256(b_startBalance, {asBytes: true})
   var public_endBalance = sha256(b_endBalance, {asBytes: true})
-  var public_incoming = sha256(b_incoming, {asBytes: true})
-  var public_outgoing = sha256(b_outgoing, {asBytes: true})
+  var public_incoming1 = sha256(b_incoming1, {asBytes: true})
+  var public_incoming2 = sha256(b_incoming2, {asBytes: true})
+  var public_outgoing1 = sha256(b_outgoing1, {asBytes: true})
+  var public_outgoing2 = sha256(b_outgoing2, {asBytes: true})
 
   var publicParameters = public_startBalance.toString().replace(/,/g, ' ') + "\n"
   publicParameters += public_endBalance.toString().replace(/,/g, ' ') + "\n"
-  publicParameters += public_incoming.toString().replace(/,/g, ' ') + "\n"
-  publicParameters += public_outgoing.toString().replace(/,/g, ' ')
+  publicParameters += public_incoming1.toString().replace(/,/g, ' ') + "\n"
+  publicParameters += public_incoming2.toString().replace(/,/g, ' ') + "\n"
+  publicParameters += public_outgoing1.toString().replace(/,/g, ' ') + "\n"
+  publicParameters += public_outgoing2.toString().replace(/,/g, ' ')
 
   var privateParameters = arr_startBalance.toString().replace(/,/g, ' ') + "\n"
   privateParameters += arr_endBalance.toString().replace(/,/g, ' ') + "\n"
-  privateParameters += arr_incoming.toString().replace(/,/g, ' ') + "\n"
-  privateParameters += arr_outgoing.toString().replace(/,/g, ' ')
+  privateParameters += arr_incoming1.toString().replace(/,/g, ' ') + "\n"
+  privateParameters += arr_incoming2.toString().replace(/,/g, ' ') + "\n"
+  privateParameters += arr_outgoing1.toString().replace(/,/g, ' ') + "\n"
+  privateParameters += arr_outgoing2.toString().replace(/,/g, ' ')
 
   fs.writeFile('publicInputParameters', publicParameters, function(errPublic) {
     if(errPublic) {
@@ -135,17 +147,19 @@ function handleGenerateMultiPaymentProof(cb){
   fs.unlink('proof1', function(error) {
   fs.unlink('proof2', function(error) {
     console.log('Please enter the amounts that are being paid')
-    prompt.get(['incoming', 'outgoing'], function(err, paymentAmountInputs){
-      incoming = parseInt(paymentAmountInputs.incoming)
-      outgoing = parseInt(paymentAmountInputs.outgoing)
-      endBalance = startBalance + incoming - outgoing
+    prompt.get(['incoming1', 'incoming2','outgoing1', 'outgoing2'], function(err, paymentAmountInputs){
+      incoming1 = parseInt(paymentAmountInputs.incoming1)
+      incoming2 = parseInt(paymentAmountInputs.incoming2)
+      outgoing1 = parseInt(paymentAmountInputs.outgoing1)
+      outgoing2 = parseInt(paymentAmountInputs.outgoing2)
+      endBalance = startBalance + incoming1 + incoming2 - outgoing1 - outgoing2
 
       generateProofInputs(function(msg1, err1){
         if(err1){
           console.log(msg1, err1)
           cb()
         } else {
-          handleExecuteProgram('./payment_in_out_proof_generator', 'Loading Proving Key from file... (this takes a few seconds)', '', 'The proof generation failed\n\n', function(msgGenerateProof){
+          handleExecuteProgram('./payment_multi_generate_proof', 'Loading Proving Key from file... (this takes a few seconds)', '', 'The proof generation failed\n\n', function(msgGenerateProof){
             if(msgGenerateProof){
               console.log('\n' + msgGenerateProof)
             }
@@ -160,14 +174,14 @@ function handleGenerateMultiPaymentProof(cb){
 
 function handleInput(){
   console.log('Start balance:', startBalance)
-  console.log('Total incoming payments:', incoming)
-  console.log('Total outgoing payments:', outgoing)
+  console.log('Total incoming payments:', (incoming1 + incoming2))
+  console.log('Total outgoing payments:', (outgoing1 + outgoing2))
   console.log('End balance:', endBalance)
   console.log('')
   console.log('Please select an option:\n1) Create a new key pair\n2) Generate a multi-payment proof\n3) Verify multi-payment proof\n0) Quit')
   prompt.get(['option'], function(err, answer){
     if(answer.option == 1){
-      handleExecuteProgram('./payment_in_out_keypair_generator', 'Generating key pair...', 'The key pair has been generated and the keys written to files (provingKey and verificationKey)', 'The key pair failed\n\n', function(){
+      handleExecuteProgram('./payment_multi_generate_keypair', 'Generating key pair...', 'The key pair has been generated and the keys written to files (provingKey and verificationKey)', 'The key pair failed\n\n', function(){
         handleInput()
       })
     } else if (answer.option == 2){
@@ -175,15 +189,17 @@ function handleInput(){
         handleInput()
       })
     } else if(answer.option == 3){
-      handleExecuteProgram('./payment_in_out_proof_verifier', '', '', 'The proof verification failed\n\n', function(verifyErr){
+      handleExecuteProgram('./payment_multi_verify_proof', '', '', 'The proof verification failed\n\n', function(verifyErr){
         if(verifyErr){
           console.log(verifyErr)
           handleInput()
         } else {
           console.log('Verification was succesful')
           startBalance = endBalance
-          incoming = 0
-          outgoing = 0
+          incoming1 = 0
+          incoming2 = 0
+          outgoing1 = 0
+          outgoing2 = 0
           
           handleInput()
         }

@@ -5,11 +5,9 @@ depinst
 depsrc
 *.swp
 libsnark
-verifyProof
-verificationKey
-provingKey
-generateKeyPair
-generateProof
+payment_*
+verificationKey*
+provingKey*
 proof*
 privateInputParameters
 publicInputParameters

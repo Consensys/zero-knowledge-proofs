@@ -3,11 +3,9 @@
 #include <vector>
 #include <string>
 
-using namespace std;
-
-bit_vector int_list_to_bits_local(const vector<unsigned long> &l, const size_t wordsize)
+std::vector<bool> int_list_to_bits_local(const vector<unsigned long> &l, const size_t wordsize)
 {
-    bit_vector res(wordsize*l.size());
+    std::vector<bool> res(wordsize*l.size());
     for (size_t i = 0; i < l.size(); ++i)
     {
         for (size_t j = 0; j < wordsize; ++j)
@@ -18,11 +16,11 @@ bit_vector int_list_to_bits_local(const vector<unsigned long> &l, const size_t w
     return res;
 }
 
-vector<vector<unsigned long>> fillValuesFromfile(string fileName ) {
+std::vector<std::vector<unsigned long>> fillValuesFromfile(string fileName ) {
 {
     string line;
 
-    vector<vector<long unsigned int>> outputValues;
+    std::vector<std::vector<long unsigned int>> outputValues;
     ifstream inputParameters(fileName);
     while(getline(inputParameters, line)){
 
