@@ -29,7 +29,7 @@ int genProof(r1cs_ppzksnark_proving_key<default_r1cs_ppzksnark_pp> provingKey_in
   vector<bool> r_outgoing1_bv(256);
   vector<bool> r_outgoing2_bv(256);
 
-  vector<vector<unsigned long int>> publicValues = fillValuesFromfile("publicInputParameters");
+  vector<vector<unsigned long int>> publicValues = fillValuesFromfile("publicInputParameters_multi");
   h_startBalance_bv = int_list_to_bits_local(publicValues[0], 8);
   h_endBalance_bv = int_list_to_bits_local(publicValues[1], 8);
   h_incoming1_bv = int_list_to_bits_local(publicValues[2], 8);
@@ -37,7 +37,7 @@ int genProof(r1cs_ppzksnark_proving_key<default_r1cs_ppzksnark_pp> provingKey_in
   h_outgoing1_bv = int_list_to_bits_local(publicValues[4], 8);
   h_outgoing2_bv = int_list_to_bits_local(publicValues[5], 8);
 
-  vector<vector<unsigned long int>> privateValues = fillValuesFromfile("privateInputParameters");
+  vector<vector<unsigned long int>> privateValues = fillValuesFromfile("privateInputParameters_multi");
   r_startBalance_bv = int_list_to_bits_local(privateValues[0], 8);
   r_endBalance_bv = int_list_to_bits_local(privateValues[1], 8);
   r_incoming1_bv = int_list_to_bits_local(privateValues[2], 8);

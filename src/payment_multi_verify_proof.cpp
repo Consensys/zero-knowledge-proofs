@@ -39,7 +39,7 @@ int verifyProof(r1cs_ppzksnark_verification_key<default_r1cs_ppzksnark_pp> verif
   std::vector<bool> h_incoming2_bv(256);
   std::vector<bool> h_outgoing1_bv(256);
   std::vector<bool> h_outgoing2_bv(256);
-  vector<vector<unsigned long int>> values = fillValuesFromfile("publicInputParameters");
+  vector<vector<unsigned long int>> values = fillValuesFromfile("publicInputParameters_multi");
   h_startBalance_bv = int_list_to_bits_local(values[0], 8);
   h_endBalance_bv = int_list_to_bits_local(values[1], 8);
   h_incoming1_bv = int_list_to_bits_local(values[2], 8);

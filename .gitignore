@@ -9,6 +9,6 @@ payment_*
 verificationKey*
 provingKey*
 proof*
-privateInputParameters
-publicInputParameters
+privateInputParameters*
+publicInputParameters*
 node_modules/
