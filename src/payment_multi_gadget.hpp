@@ -22,24 +22,22 @@ public:
     pb_variable_array<FieldT> input_as_field_elements; /* R1CS input */
     pb_variable_array<FieldT> input_as_bits; /* unpacked R1CS input */
 
-   /* R1CS constraints for computing sum_i 2^i *x_i where [x_i] is bit-array */
-
     pb_variable_array<FieldT> intermediate_startBalance;
     pb_variable_array<FieldT> intermediate_endBalance;
-    pb_variable_array<FieldT> intermediate_incoming[2];
-    pb_variable_array<FieldT> intermediate_outgoing[2];
+    pb_variable_array<FieldT> intermediate_incoming[noPayments];
+    pb_variable_array<FieldT> intermediate_outgoing[noPayments];
 
     std::shared_ptr<multipacking_gadget<FieldT> > unpack_inputs; /* multipacking gadget */
 
     std::shared_ptr<digest_variable<FieldT>> h_startBalance_var; 
     std::shared_ptr<digest_variable<FieldT>> h_endBalance_var; 
-    std::shared_ptr<digest_variable<FieldT>> h_incoming_var[2]; 
-    std::shared_ptr<digest_variable<FieldT>> h_outgoing_var[2]; 
+    std::shared_ptr<digest_variable<FieldT>> h_incoming_var[noPayments]; 
+    std::shared_ptr<digest_variable<FieldT>> h_outgoing_var[noPayments]; 
 
     std::shared_ptr<digest_variable<FieldT>> r_startBalance_var; 
     std::shared_ptr<digest_variable<FieldT>> r_endBalance_var; 
-    std::shared_ptr<digest_variable<FieldT>> r_incoming_var[2]; 
-    std::shared_ptr<digest_variable<FieldT>> r_outgoing_var[2]; 
+    std::shared_ptr<digest_variable<FieldT>> r_incoming_var[noPayments]; 
+    std::shared_ptr<digest_variable<FieldT>> r_outgoing_var[noPayments]; 
 
     std::shared_ptr<block_variable<FieldT>> h_r_startBalance_block; /* 512 bit block that contains startBalance + padding */
     std::shared_ptr<sha256_compression_function_gadget<FieldT>> h_r_startBalance; /* hashing gadget for startBalance */
@@ -47,11 +45,11 @@ public:
     std::shared_ptr<block_variable<FieldT>> h_r_endBalance_block; /* 512 bit block that contains endBalance + padding */
     std::shared_ptr<sha256_compression_function_gadget<FieldT>> h_r_endBalance; /* hashing gadget for endBalance */
 
-    std::shared_ptr<block_variable<FieldT>> h_r_incoming_block[2]; /* 512 bit block that contains incoming + padding */
-    std::shared_ptr<sha256_compression_function_gadget<FieldT>> h_r_incoming[2]; /* hashing gadget for incoming */
+    std::shared_ptr<block_variable<FieldT>> h_r_incoming_block[noPayments]; /* 512 bit block that contains incoming + padding */
+    std::shared_ptr<sha256_compression_function_gadget<FieldT>> h_r_incoming[noPayments]; /* hashing gadget for incoming */
 
-    std::shared_ptr<block_variable<FieldT>> h_r_outgoing_block[2]; /* 512 bit block that contains outgoing + padding */
-    std::shared_ptr<sha256_compression_function_gadget<FieldT>> h_r_outgoing[2]; /* hashing gadget for outgoing */
+    std::shared_ptr<block_variable<FieldT>> h_r_outgoing_block[noPayments]; /* 512 bit block that contains outgoing + padding */
+    std::shared_ptr<sha256_compression_function_gadget<FieldT>> h_r_outgoing[noPayments]; /* hashing gadget for outgoing */
 
     pb_variable<FieldT> zero;
     pb_variable_array<FieldT> padding_var; /* SHA256 length padding */
@@ -314,11 +312,11 @@ public:
         std::vector<FieldT> interm_startBalance(NN);
         std::vector<FieldT> interm_endBalance(NN);
 
-        std::array<std::vector<FieldT>, 2> interm_incoming{{std::vector<FieldT>(NN), 
+        std::array<std::vector<FieldT>, noPayments> interm_incoming{{std::vector<FieldT>(NN), 
                                     std::vector<FieldT>(NN) 
                                     }};
 
-        std::array<std::vector<FieldT>, 2> interm_outgoing{{std::vector<FieldT>(NN), 
+        std::array<std::vector<FieldT>, noPayments> interm_outgoing{{std::vector<FieldT>(NN), 
                                     std::vector<FieldT>(NN) 
                                     }};
 
