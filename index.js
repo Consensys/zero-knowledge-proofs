@@ -180,7 +180,7 @@ function generateProofInputs(fileSuffix, cb){
 function handleGenerateMultiPaymentProof(cb){
   fs.unlink('proof1', function(error) {
     console.log('Please enter the amounts that are being paid')
-    prompt.get(['incoming1', 'incoming2', 'incoming3', 'outgoing1', 'outgoing2', 'outgoing3'], function(err, paymentAmountInputs){
+    prompt.get(['incoming1', 'incoming2', 'outgoing1', 'outgoing2'], function(err, paymentAmountInputs){
       incoming[0] = parseInt(paymentAmountInputs.incoming1)
       incoming[1] = parseInt(paymentAmountInputs.incoming2)
       outgoing[0] = parseInt(paymentAmountInputs.outgoing1)
