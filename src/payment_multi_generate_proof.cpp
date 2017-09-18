@@ -16,32 +16,33 @@ using namespace std;
 int genProof(r1cs_ppzksnark_proving_key<default_r1cs_ppzksnark_pp> provingKey_in, string proofFileName)
 {
   const int unsigned _noPayments = 2;
+  int unsigned _counter;
   // Initialize bit_vectors for all of the variables involved.
-  vector<bool> h_startBalance_bv(256);
-  vector<bool> h_endBalance_bv(256);
+  bit_vector h_startBalance_bv;
+  bit_vector h_endBalance_bv;
   bit_vector h_incoming_bv[_noPayments];
   bit_vector h_outgoing_bv[_noPayments];
-  vector<bool> r_startBalance_bv(256);
-  vector<bool> r_endBalance_bv(256);
+  bit_vector r_startBalance_bv;
+  bit_vector r_endBalance_bv;
   bit_vector r_incoming_bv[_noPayments];
   bit_vector r_outgoing_bv[_noPayments];
 
   vector<vector<unsigned long int>> publicValues = fillValuesFromfile("publicInputParameters_multi");
   h_startBalance_bv = int_list_to_bits_local(publicValues[0], 8);
   h_endBalance_bv = int_list_to_bits_local(publicValues[1], 8);
-  for (counter = 0; counter < _noPayments; counter++)
+  for (_counter = 0; _counter < noPayments; _counter++)
   {
-    h_incoming_bv[counter] = int_list_to_bits_local(publicValues[2+counter], 8);
-    h_outgoing_bv[counter] = int_list_to_bits_local(publicValues[(2+counter)+counter], 8);
+    h_incoming_bv[_counter] = int_list_to_bits_local(publicValues[_counter+2], 8);
+    h_outgoing_bv[_counter] = int_list_to_bits_local(publicValues[_counter+2+_noPayments], 8);
   }
 
   vector<vector<unsigned long int>> privateValues = fillValuesFromfile("privateInputParameters_multi");
   r_startBalance_bv = int_list_to_bits_local(privateValues[0], 8);
   r_endBalance_bv = int_list_to_bits_local(privateValues[1], 8);
-  for (counter = 0; counter < _noPayments; counter++)
+  for (_counter = 0; _counter < noPayments; _counter++)
   {
-    r_incoming_bv[counter] = int_list_to_bits_local(privateValues[2+counter], 8);
-    r_outgoing_bv[counter] = int_list_to_bits_local(privateValues[(2+counter)+counter], 8);
+    r_incoming_bv[_counter] = int_list_to_bits_local(privateValues[_counter+2], 8);
+    r_outgoing_bv[_counter] = int_list_to_bits_local(privateValues[_counter+2+_noPayments], 8);
   }
 
   boost::optional<libsnark::r1cs_ppzksnark_proof<libff::alt_bn128_pp>> proof = generate_payment_multi_proof<default_r1cs_ppzksnark_pp>(provingKey_in, h_startBalance_bv, h_endBalance_bv, h_incoming_bv, h_outgoing_bv, r_startBalance_bv, r_endBalance_bv, r_incoming_bv, r_outgoing_bv);

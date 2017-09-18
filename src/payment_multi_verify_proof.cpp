@@ -12,13 +12,12 @@
 using namespace libsnark;
 using namespace std;
 
+
 int verifyProof(r1cs_ppzksnark_verification_key<default_r1cs_ppzksnark_pp> verificationKey_in, string proofFileName)
 {
   const int unsigned _noPayments = 2;
-  // Read proof in from file
-  //libsnark::r1cs_ppzksnark_proof<libff::alt_bn128_pp> proof_in;
+  int unsigned _counter;
   boost::optional<libsnark::r1cs_ppzksnark_proof<libff::alt_bn128_pp>> proof_in;
-  //r1cs_ppzksnark_proof<default_r1cs_ppzksnark_pp> proof_in;
   
   cout << proofFileName << endl;
   ifstream proofFileIn(proofFileName);
@@ -34,18 +33,18 @@ int verifyProof(r1cs_ppzksnark_verification_key<default_r1cs_ppzksnark_pp> verif
   proofFromFile >> proof_in;
   
   // Hashes to validate against
-  vector<bool> h_startBalance_bv(256);
-  vector<bool> h_endBalance_bv(256);
-  bit_vector h_incoming_bv[2];
-  bit_vector h_outgoing_bv[2];
-
+  bit_vector h_startBalance_bv;
+  bit_vector h_endBalance_bv;
+  bit_vector h_incoming_bv[_noPayments];
+  bit_vector h_outgoing_bv[_noPayments];
   vector<vector<unsigned long int>> values = fillValuesFromfile("publicInputParameters_multi");
   h_startBalance_bv = int_list_to_bits_local(values[0], 8);
   h_endBalance_bv = int_list_to_bits_local(values[1], 8);
-  for (counter = 0; counter < _noPayments; counter++)
+  
+  for (_counter = 0; _counter < noPayments; _counter++)
   {
-    h_incoming_bv[counter] = int_list_to_bits_local(values[2+counter], 8);
-    h_outgoing_bv[counter] = int_list_to_bits_local(values[(2+counter)+counter], 8);
+    h_incoming_bv[_counter] = int_list_to_bits_local(values[_counter+2], 8);
+    h_outgoing_bv[_counter] = int_list_to_bits_local(values[_counter+2+_noPayments], 8);
   }
 
   cout << "proof read ... starting verification" << endl;

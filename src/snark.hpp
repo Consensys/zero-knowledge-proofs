@@ -70,15 +70,15 @@ boost::optional<r1cs_ppzksnark_proof<ppzksnark_ppT>> generate_payment_in_out_pro
 
 template<typename ppzksnark_ppT>
 boost::optional<r1cs_ppzksnark_proof<ppzksnark_ppT>> generate_payment_multi_proof(r1cs_ppzksnark_proving_key<ppzksnark_ppT> proving_key,
-                                                                   const bit_vector &h_startbalance,
-                                                                   const bit_vector &h_endbalance,
-                                                                   const bit_vector *h_incoming,
-                                                                   const bit_vector *h_outgoing,
-                                                                   const bit_vector &r_startbalance,
-                                                                   const bit_vector &r_endbalance,
-                                                                   const bit_vector *r_incoming,
-                                                                   const bit_vector *r_outgoing
-                                                                   )
+                                                            const bit_vector &h_startbalance,
+                                                            const bit_vector &h_endbalance,
+                                                            const bit_vector *h_incoming,
+                                                            const bit_vector *h_outgoing,
+                                                            const bit_vector &r_startbalance,
+                                                            const bit_vector &r_endbalance,
+                                                            const bit_vector *r_incoming,
+                                                            const bit_vector *r_outgoing
+                                                            )
 {
     typedef Fr<ppzksnark_ppT> FieldT;
 
@@ -124,7 +124,6 @@ bool verify_payment_multi_proof(r1cs_ppzksnark_verification_key<ppzksnark_ppT> v
                  )
 {
     typedef Fr<ppzksnark_ppT> FieldT;
-
     const r1cs_primary_input<FieldT> input = l_input_map_multi<FieldT>(h_startbalance, h_endbalance, h_incoming, h_outgoing);
 
     std::cout << "**** After l_input_map_multi *****" << std::endl;
