@@ -60,7 +60,7 @@ public:
     payment_multi_gadget(protoboard<FieldT> &pb) : gadget<FieldT>(pb, "payment_multi_gadget")
     {
         // Allocate space for the verifier input.
-        const size_t input_size_in_bits = sha256_digest_len * 6;
+        const size_t input_size_in_bits = sha256_digest_len * (4 + noPayments);
         {
             // We use a "multipacking" technique which allows us to constrain
             // the input bits in as few field elements as possible.

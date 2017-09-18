@@ -72,34 +72,18 @@ template<typename ppzksnark_ppT>
 boost::optional<r1cs_ppzksnark_proof<ppzksnark_ppT>> generate_payment_multi_proof(r1cs_ppzksnark_proving_key<ppzksnark_ppT> proving_key,
                                                                    const bit_vector &h_startbalance,
                                                                    const bit_vector &h_endbalance,
-                                                                   const bit_vector &h_incoming1,
-                                                                   const bit_vector &h_incoming2,
-                                                                   const bit_vector &h_outgoing1,
-                                                                   const bit_vector &h_outgoing2,
+                                                                   const bit_vector *h_incoming,
+                                                                   const bit_vector *h_outgoing,
                                                                    const bit_vector &r_startbalance,
                                                                    const bit_vector &r_endbalance,
-                                                                   const bit_vector &r_incoming1,
-                                                                   const bit_vector &r_incoming2,
-                                                                   const bit_vector &r_outgoing1,
-                                                                   const bit_vector &r_outgoing2
+                                                                   const bit_vector *r_incoming,
+                                                                   const bit_vector *r_outgoing
                                                                    )
 {
     typedef Fr<ppzksnark_ppT> FieldT;
 
     protoboard<FieldT> pb;
     payment_multi_gadget<FieldT> g(pb);
-    bit_vector h_incoming[2];
-    bit_vector h_outgoing[2];
-    h_incoming[0] = h_incoming1;
-    h_incoming[1] = h_incoming2;
-    h_outgoing[0] = h_outgoing1;
-    h_outgoing[1] = h_outgoing2;
-    bit_vector r_incoming[2];
-    bit_vector r_outgoing[2];
-    r_incoming[0] = r_incoming1;
-    r_incoming[1] = r_incoming2;
-    r_outgoing[0] = r_outgoing1;
-    r_outgoing[1] = r_outgoing2;
     g.generate_payment_multi_constraints();
     g.generate_payment_multi_witness(h_startbalance, h_endbalance, h_incoming, h_outgoing, r_startbalance, r_endbalance, r_incoming, r_outgoing);
 
@@ -135,19 +119,11 @@ bool verify_payment_multi_proof(r1cs_ppzksnark_verification_key<ppzksnark_ppT> v
                   r1cs_ppzksnark_proof<ppzksnark_ppT> proof,
                   const bit_vector &h_startbalance,
                   const bit_vector &h_endbalance,
-                  const bit_vector &h_incoming1,
-                  const bit_vector &h_incoming2,
-                  const bit_vector &h_outgoing1,
-                  const bit_vector &h_outgoing2
+                  const bit_vector *h_incoming,
+                  const bit_vector *h_outgoing
                  )
 {
     typedef Fr<ppzksnark_ppT> FieldT;
-    bit_vector h_incoming[2];
-    bit_vector h_outgoing[2];
-    h_incoming[0] = h_incoming1;
-    h_incoming[1] = h_incoming2;
-    h_outgoing[0] = h_outgoing1;
-    h_outgoing[1] = h_outgoing2;
 
     const r1cs_primary_input<FieldT> input = l_input_map_multi<FieldT>(h_startbalance, h_endbalance, h_incoming, h_outgoing);
 
