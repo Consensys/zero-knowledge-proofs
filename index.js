@@ -6,10 +6,9 @@ const sha256 = require('sha256')
 
 var startBalance = 0
 var endBalance = 0
-var incoming1 = 0
-var incoming2 = 0
-var outgoing1 = 0
-var outgoing2 = 0
+var incoming = [0,0]
+var outgoing = [0,0]
+var noPayments = 2
 
 if(process.argv.length!=3){
   console.log("you need to set your start balance.  Run the application using node index.js startBalance=1000")
@@ -90,51 +89,77 @@ function getArray(value){
   return r_value.concat(arr_salt)
 }
 
+function getListOfArrays(inputArray){
+  returnVal = []
+  for(var i=0;i<noPayments;i++){
+    returnVal.push(getArray(inputArray[i]))
+  }
+  return returnVal
+}
+
+function getListOfBuffers(inputArray){
+  returnVal = []
+  for(var i=0;i<noPayments;i++){
+    returnVal.push(Buffer.from(inputArray[i]))
+  }
+  return returnVal
+}
+
+function getListOfSha(inputArray){
+  returnVal = []
+  for(var i=0;i<noPayments;i++){
+    returnVal.push(sha256(inputArray[i], {asBytes: true}))
+  }
+  return returnVal
+}
+
 function generateProofInputs(fileSuffix, cb){
 
   var arr_startBalance = getArray(startBalance)
   var arr_endBalance = getArray(endBalance)
-  var arr_incoming1 = getArray(incoming1)
-  var arr_incoming2 = getArray(incoming2)
-  var arr_outgoing1 = getArray(outgoing1)
-  var arr_outgoing2 = getArray(outgoing2)
+  var arr_incoming = getListOfArrays(incoming)
+  var arr_outgoing = getListOfArrays(outgoing)
 
   var b_startBalance = Buffer.from(arr_startBalance)
   var b_endBalance = Buffer.from(arr_endBalance)
-  var b_incoming1 = Buffer.from(arr_incoming1)
-  var b_incoming2 = Buffer.from(arr_incoming2)
-  var b_outgoing1 = Buffer.from(arr_outgoing1)
-  var b_outgoing2 = Buffer.from(arr_outgoing2)
+  var b_incoming = getListOfBuffers(arr_incoming)
+  var b_outgoing = getListOfBuffers(arr_outgoing)
 
   var public_startBalance = sha256(b_startBalance, {asBytes: true})
   var public_endBalance = sha256(b_endBalance, {asBytes: true})
-  var public_incoming1 = sha256(b_incoming1, {asBytes: true})
-  var public_incoming2 = sha256(b_incoming2, {asBytes: true})
-  var public_outgoing1 = sha256(b_outgoing1, {asBytes: true})
-  var public_outgoing2 = sha256(b_outgoing2, {asBytes: true})
+  var public_incoming = getListOfSha(b_incoming)
+  var public_outgoing = getListOfSha(b_outgoing)
 
   var publicParameters = public_startBalance.toString().replace(/,/g, ' ') + "\n"
   publicParameters += public_endBalance.toString().replace(/,/g, ' ') + "\n"
-  publicParameters += public_incoming1.toString().replace(/,/g, ' ') + "\n"
+  publicParameters += public_incoming[0].toString().replace(/,/g, ' ') + "\n"
 
   if(fileSuffix=="multi"){
-    publicParameters += public_incoming2.toString().replace(/,/g, ' ') + "\n"
+    for(var i=1;i<noPayments;i++){
+      publicParameters += public_incoming[i].toString().replace(/,/g, ' ') + "\n"
+    }
   }
 
-  publicParameters += public_outgoing1.toString().replace(/,/g, ' ') + "\n"
+  publicParameters += public_outgoing[0].toString().replace(/,/g, ' ') + "\n"
   if(fileSuffix=="multi"){
-    publicParameters += public_outgoing2.toString().replace(/,/g, ' ')
+    for(var i=1;i<noPayments;i++){
+      publicParameters += public_outgoing[i].toString().replace(/,/g, ' ') + "\n"
+    }
   }
 
   var privateParameters = arr_startBalance.toString().replace(/,/g, ' ') + "\n"
   privateParameters += arr_endBalance.toString().replace(/,/g, ' ') + "\n"
-  privateParameters += arr_incoming1.toString().replace(/,/g, ' ') + "\n"
+  privateParameters += arr_incoming[0].toString().replace(/,/g, ' ') + "\n"
   if(fileSuffix=="multi"){
-    privateParameters += arr_incoming2.toString().replace(/,/g, ' ') + "\n"
+    for(var i=1;i<noPayments;i++){
+      privateParameters += arr_incoming[i].toString().replace(/,/g, ' ') + "\n"
+    }
   }
-  privateParameters += arr_outgoing1.toString().replace(/,/g, ' ') + "\n"
+  privateParameters += arr_outgoing[0].toString().replace(/,/g, ' ') + "\n"
   if(fileSuffix=="multi"){
-    privateParameters += arr_outgoing2.toString().replace(/,/g, ' ')
+    for(var i=1;i<noPayments;i++){
+      privateParameters += arr_outgoing[i].toString().replace(/,/g, ' ') + "\n"
+    }
   }
 
   fs.writeFile('publicInputParameters_' + fileSuffix, publicParameters, function(errPublic) {
@@ -155,12 +180,16 @@ function generateProofInputs(fileSuffix, cb){
 function handleGenerateMultiPaymentProof(cb){
   fs.unlink('proof1', function(error) {
     console.log('Please enter the amounts that are being paid')
-    prompt.get(['incoming1', 'incoming2','outgoing1', 'outgoing2'], function(err, paymentAmountInputs){
-      incoming1 = parseInt(paymentAmountInputs.incoming1)
-      incoming2 = parseInt(paymentAmountInputs.incoming2)
-      outgoing1 = parseInt(paymentAmountInputs.outgoing1)
-      outgoing2 = parseInt(paymentAmountInputs.outgoing2)
-      endBalance = startBalance + incoming1 + incoming2 - outgoing1 - outgoing2
+    prompt.get(['incoming1', 'incoming2', 'incoming3', 'outgoing1', 'outgoing2', 'outgoing3'], function(err, paymentAmountInputs){
+      incoming[0] = parseInt(paymentAmountInputs.incoming1)
+      incoming[1] = parseInt(paymentAmountInputs.incoming2)
+      outgoing[0] = parseInt(paymentAmountInputs.outgoing1)
+      outgoing[1] = parseInt(paymentAmountInputs.outgoing2)
+      endBalance = startBalance
+      for(var i=0;i<noPayments;i++){
+        endBalance += incoming[i]
+        endBalance -= outgoing[i]
+      }
 
       generateProofInputs("multi", function(msg1, err1){
         if(err1){
@@ -183,11 +212,15 @@ function handleGenerateSinglePaymentProof(cb){
   fs.unlink('proof1', function(error) {
     console.log('Please enter the amounts that are being paid')
     prompt.get(['incoming', 'outgoing'], function(err, paymentAmountInputs){
-      incoming1 = parseInt(paymentAmountInputs.incoming)
-      incoming2 = 0
-      outgoing1 = parseInt(paymentAmountInputs.outgoing)
-      outgoing2 = 0
-      endBalance = startBalance + incoming1 - outgoing1
+      incoming[0] = parseInt(paymentAmountInputs.incoming)
+      incoming[1] = 0
+      incoming[2] = 0
+      incoming[3] = 0
+      outgoing[0] = parseInt(paymentAmountInputs.outgoing)
+      outgoing[1] = 0
+      outgoing[2] = 0
+      outgoing[3] = 0
+      endBalance = startBalance + incoming[0] - outgoing[0]
 
       generateProofInputs("single", function(msg1, err1){
         if(err1){
@@ -208,8 +241,8 @@ function handleGenerateSinglePaymentProof(cb){
 
 function handleSinglePayments(){
   console.log('Start balance:', startBalance)
-  console.log('Incoming payment:', incoming1)
-  console.log('Outgoing payment:', outgoing1)
+  console.log('Incoming payment:', incoming[0])
+  console.log('Outgoing payment:', outgoing[0])
   console.log('End balance:', endBalance)
   console.log('')
   console.log('Please select an option:\n1) Create a new key pair\n2) Generate a single-payment proof\n3) Verify single-payment proof\n0) Quit')
@@ -230,11 +263,11 @@ function handleSinglePayments(){
         } else {
           console.log('Verification was succesful')
           startBalance = endBalance
-          incoming1 = 0
-          incoming2 = 0
-          outgoing1 = 0
-          outgoing2 = 0
-          
+          for(var i=0;i<noPayments;i++){
+            incoming[i] = 0
+            outgoing[i] = 0
+          }
+
           handleSinglePayments()
         }
       })
@@ -246,8 +279,15 @@ function handleSinglePayments(){
 
 function handleMultiplePayments(){
   console.log('Start balance:', startBalance)
-  console.log('Total incoming payments:', (incoming1 + incoming2))
-  console.log('Total outgoing payments:', (outgoing1 + outgoing2))
+  var totalIncoming = 0
+  var totalOutgoing = 0
+  for(var i=0;i<noPayments;i++){
+    totalIncoming += incoming[i]
+    totalOutgoing += outgoing[i]
+  }
+  
+  console.log('Total incoming payments:', totalIncoming)
+  console.log('Total outgoing payments:', totalOutgoing)
   console.log('End balance:', endBalance)
   console.log('')
   console.log('Please select an option:\n1) Create a new key pair\n2) Generate a multi-payment proof\n3) Verify multi-payment proof\n0) Quit')
@@ -268,10 +308,10 @@ function handleMultiplePayments(){
         } else {
           console.log('Verification was succesful')
           startBalance = endBalance
-          incoming1 = 0
-          incoming2 = 0
-          outgoing1 = 0
-          outgoing2 = 0
+          for(var i=0;i<noPayments;i++){
+            incoming[i] = 0
+            outgoing[i] = 0
+          }
           
           handleMultiplePayments()
         }

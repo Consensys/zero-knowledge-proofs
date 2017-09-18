@@ -60,7 +60,7 @@ public:
     payment_multi_gadget(protoboard<FieldT> &pb) : gadget<FieldT>(pb, "payment_multi_gadget")
     {
         // Allocate space for the verifier input.
-        const size_t input_size_in_bits = sha256_digest_len * (4 + noPayments);
+        const size_t input_size_in_bits = sha256_digest_len * (2 + (noPayments*2));
         {
             // We use a "multipacking" technique which allows us to constrain
             // the input bits in as few field elements as possible.
@@ -85,10 +85,10 @@ public:
 
         // SHA256's length padding
         for (size_t i = 0; i < 256; i++) {
-            if (sha256_padding[i])
-                padding_var.emplace_back(ONE);
-            else
-                padding_var.emplace_back(zero);
+          if (sha256_padding[i])
+            padding_var.emplace_back(ONE);
+          else
+            padding_var.emplace_back(zero);
         }
 
         // Verifier (and prover) inputs:
@@ -271,14 +271,14 @@ public:
         }
 
         // Constraint that start bal + sum(incoming) = end bal + sum(outgoing)
-
+/*
         this->pb.add_r1cs_constraint(
             r1cs_constraint<FieldT>(
                 { intermediate_startBalance[NN-1], intermediate_incoming[0][NN-1], intermediate_incoming[1][NN-1]},
                 { 1 },
                 { intermediate_endBalance[NN-1], intermediate_outgoing[0][NN-1], intermediate_outgoing[1][NN-1]}), 
             FMT(this->annotation_prefix, "finalsum_%zu", 0));
-        
+*/        
 
         // These are the constraints to ensure the hashes validate.
         h_r_startBalance->generate_r1cs_constraints();
