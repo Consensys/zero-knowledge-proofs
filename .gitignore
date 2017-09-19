@@ -5,12 +5,7 @@ depinst
 depsrc
 *.swp
 libsnark
-verifyProof
-verificationKey
-provingKey
-generateKeyPair
-generateProof
+payment_*
 proof*
-privateInputParameters
-publicInputParameters
+proving*
 node_modules/

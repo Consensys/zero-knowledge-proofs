@@ -3,9 +3,9 @@
 
 using namespace libff;
 
-const size_t sha256_digest_len = 256;
+const size_t sha256_digest_len1 = 256;
 
-bool sha256_padding[256] = {1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
+bool sha256_padding1[256] = {1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
                             0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
                             0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
                             0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
@@ -58,7 +58,7 @@ public:
     payment_in_out_gadget(protoboard<FieldT> &pb) : gadget<FieldT>(pb, "payment_in_out_gadget")
     {
         // Allocate space for the verifier input.
-        const size_t input_size_in_bits = sha256_digest_len * 4;
+        const size_t input_size_in_bits = sha256_digest_len1 * 4;
         {
             // We use a "multipacking" technique which allows us to constrain
             // the input bits in as few field elements as possible.
@@ -72,24 +72,24 @@ public:
 
         zero.allocate(this->pb, FMT(this->annotation_prefix, "zero"));
 
-        intermediate_startBalance.allocate(this->pb, sha256_digest_len/2, "intermediate_startBalance");
-        intermediate_endBalance.allocate(this->pb, sha256_digest_len/2, "intermediate_endBalance");
-        intermediate_incoming.allocate(this->pb, sha256_digest_len/2, "intermediate_incoming");
-        intermediate_outgoing.allocate(this->pb, sha256_digest_len/2, "intermediate_outgoing");
+        intermediate_startBalance.allocate(this->pb, sha256_digest_len1/2, "intermediate_startBalance");
+        intermediate_endBalance.allocate(this->pb, sha256_digest_len1/2, "intermediate_endBalance");
+        intermediate_incoming.allocate(this->pb, sha256_digest_len1/2, "intermediate_incoming");
+        intermediate_outgoing.allocate(this->pb, sha256_digest_len1/2, "intermediate_outgoing");
 
         // SHA256's length padding
         for (size_t i = 0; i < 256; i++) {
-            if (sha256_padding[i])
+            if (sha256_padding1[i])
                 padding_var.emplace_back(ONE);
             else
                 padding_var.emplace_back(zero);
         }
 
         // Verifier (and prover) inputs:
-        h1_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len, "h1"));
-        h2_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len, "h2"));
-        h3_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len, "h3"));
-        h4_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len, "h4"));
+        h1_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len1, "h1"));
+        h2_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len1, "h2"));
+        h3_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len1, "h3"));
+        h4_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len1, "h4"));
 
         input_as_bits.insert(input_as_bits.end(), h1_var->bits.begin(), h1_var->bits.end());
         input_as_bits.insert(input_as_bits.end(), h2_var->bits.begin(), h2_var->bits.end());
@@ -101,10 +101,10 @@ public:
         unpack_inputs.reset(new multipacking_gadget<FieldT>(this->pb, input_as_bits, input_as_field_elements, FieldT::capacity(), FMT(this->annotation_prefix, " unpack_inputs")));
 
         // Prover inputs:
-        r1_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len, "r1"));
-        r2_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len, "r2"));
-        r3_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len, "r3"));
-        r4_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len, "r4"));
+        r1_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len1, "r1"));
+        r2_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len1, "r2"));
+        r3_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len1, "r3"));
+        r4_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len1, "r4"));
 
         // IV for SHA256
         pb_linear_combination_array<FieldT> IV = SHA256_default_IV(pb);
@@ -175,7 +175,7 @@ public:
 
         generate_r1cs_equals_const_constraint<FieldT>(this->pb, zero, FieldT::zero(), "zero");
 
-        unsigned int NN = sha256_digest_len/2;
+        unsigned int NN = sha256_digest_len1/2;
         // a = intermediate_val
         // Constraint a[0] = r[0]
             this->pb.add_r1cs_constraint(
@@ -248,7 +248,7 @@ public:
                     { 1 },
                     { intermediate_endBalance[NN-1], intermediate_outgoing[NN-1]}), 
                 FMT(this->annotation_prefix, "finalsum_%zu", 0));
-        
+      
 
         // These are the constraints to ensure the hashes validate.
         h_r1->generate_r1cs_constraints();
@@ -273,7 +273,7 @@ public:
         r3_var->bits.fill_with_bits(this->pb, r_incoming);
         r4_var->bits.fill_with_bits(this->pb, r_outgoing);
         
-        size_t NN = sha256_digest_len/2;
+        size_t NN = sha256_digest_len1/2;
         
         std::vector<FieldT> interm1(NN);
         std::vector<FieldT> interm2(NN);
@@ -325,10 +325,10 @@ r1cs_primary_input<FieldT> l_input_map(const bit_vector &h1,
     // the verifier's knowledge. This is the "dual" of the
     // multipacking gadget logic in the constructor.
 
-    assert(h1.size() == sha256_digest_len);
-    assert(h2.size() == sha256_digest_len);
-    assert(h3.size() == sha256_digest_len);
-    assert(h4.size() == sha256_digest_len);
+    assert(h1.size() == sha256_digest_len1);
+    assert(h2.size() == sha256_digest_len1);
+    assert(h3.size() == sha256_digest_len1);
+    assert(h4.size() == sha256_digest_len1);
 
     std::cout << "**** After assert(size() == sha256_digest_len) *****" << std::endl;
 

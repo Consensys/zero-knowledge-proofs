@@ -32,42 +32,35 @@ Code based on <https://github.com/ebfull/lightning_circuit>.
 ### Running  
 `node index.js startBalance=10000`
 
+First select  
+1. Single payment in and single payment out
+2. Multiple payments in and multiple payments out
+
 Follow the prompts.  
 
 1. Generate a key pair
-2. Generate a multi-payment proof (one in and one out)
-4. Verify multi-payment proof
+2. Generate a proof (single or multiple)
+4. Verify proof
 0. Quit
 
 #### Generate a new key pair  
 This creates a new proving key and verification key from the circuit.  They are saved to the files:  
-* `provingKey`
-* `verificationKey`
+* `provingKey-single` or `provingKey-multi`
+* `verificationKey-single` or `verificationKey-multi`
 
-#### Generate a multi-payment proof  
-This generates a proof using the proving key as well as the input values:
+#### Generate a payment proof  
+This generates a proof using the proving key as well as the following values:
 
 * `start balance`
-* `incoming payment` (currently the user is prompted for 1 incoming payments)
-* `outgoing payment` (currently the user is prompted for 1 outgoing payments)
-* `intermediate balance` (start balance + incoming payments)
-* `end balance` (intermediate balance - outgoing payments)
+* `incoming payment/s`
+* `outgoing payment/s`
+* `end balance` (start balance + incoming - outgoing)
 
-The proofs are:  
-* `start balance` + `incoming` = `intermediate balance`
-* `end balance` + `outgoing` = `intermediate balance`
+The proof is:  
+* `start balance` + `incoming payments` = `end balance` + `outgoing payments`
 
-#### Verify multi-payment proof  
+#### Verify payment proof  
 Verifies the above proofs
-
-## anatomy
-
-* `src/gadget.hpp` exposes the gadget, which is an abstraction of related constraint
-and witness behavior in a circuit. This gadget uses other gadgets, creates its own
-constraints, and exposes an interface for building input maps.
-
-* `src/snark.hpp` exposes a loose wrapper around the constraint system and
-key generation used by `test.cpp` to construct proofs and verify them as necessary.
 
 # License
 Copyright (C) 2017 The Quorum Zero Knowledge Proof Authors.
