@@ -5,7 +5,7 @@ using namespace libff;
 
 const size_t sha256_digest_len = 256;
 const int unsigned noIncomingPayments = 3;
-const int unsigned noOutgoingPayments = 2;
+const int unsigned noOutgoingPayments = 3;
 int unsigned counter;
 
 bool sha256_padding[256] = {1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
@@ -285,14 +285,14 @@ public:
         }
 
         // Constraint that start bal + sum(incoming) = end bal + sum(outgoing)
-/*
+
         this->pb.add_r1cs_constraint(
             r1cs_constraint<FieldT>(
-                { intermediate_startBalance[NN-1], intermediate_incoming[0][NN-1], intermediate_incoming[1][NN-1]},
+                { intermediate_startBalance[NN-1], intermediate_incoming[0][NN-1], intermediate_incoming[1][NN-1], intermediate_incoming[2][NN-1]},
                 { 1 },
-                { intermediate_endBalance[NN-1], intermediate_outgoing[0][NN-1], intermediate_outgoing[1][NN-1]}), 
+                { intermediate_endBalance[NN-1], intermediate_outgoing[0][NN-1], intermediate_outgoing[1][NN-1], intermediate_outgoing[2][NN-1]}), 
             FMT(this->annotation_prefix, "finalsum_%zu", 0));
-*/        
+        
 
         // These are the constraints to ensure the hashes validate.
         h_r_startBalance->generate_r1cs_constraints();
@@ -334,14 +334,16 @@ public:
         std::vector<FieldT> interm_startBalance(NN);
         std::vector<FieldT> interm_endBalance(NN);
 
-        std::array<std::vector<FieldT>, noIncomingPayments> interm_incoming{{std::vector<FieldT>(NN), 
-                                    std::vector<FieldT>(NN) 
-                                    }};
-
-        std::array<std::vector<FieldT>, noIncomingPayments> interm_outgoing{{std::vector<FieldT>(NN), 
-                                    std::vector<FieldT>(NN) 
-                                    }};
-
+        std::array<std::vector<FieldT>, noIncomingPayments> interm_incoming;
+        for (counter = 0; counter < noIncomingPayments; counter++)
+        {
+          interm_incoming[counter] = std::vector<FieldT>(NN);
+        }
+        std::array<std::vector<FieldT>, noOutgoingPayments> interm_outgoing;
+        for (counter = 0; counter < noOutgoingPayments; counter++)
+        {
+          interm_outgoing[counter] = std::vector<FieldT>(NN);
+        }
 
         interm_startBalance[0] = r_startBalance[0] ? FieldT::one() : FieldT::zero();
         interm_endBalance[0] = r_endBalance[0] ? FieldT::one() : FieldT::zero();
