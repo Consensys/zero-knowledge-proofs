@@ -288,9 +288,25 @@ public:
         // Constraint that start bal + sum(incoming) = end bal + sum(outgoing)
         this->pb.add_r1cs_constraint(
             r1cs_constraint<FieldT>(
-                { intermediate_startBalance[NN-1], intermediate_incoming[0][NN-1], intermediate_incoming[1][NN-1], intermediate_incoming[2][NN-1], intermediate_incoming[3][NN-1], intermediate_incoming[4][NN-1], intermediate_incoming[5][NN-1]},
+                { 
+                  intermediate_startBalance[NN-1], 
+                  intermediate_incoming[0][NN-1], 
+                  intermediate_incoming[1][NN-1], 
+                  intermediate_incoming[2][NN-1], 
+                  intermediate_incoming[3][NN-1], 
+                  intermediate_incoming[4][NN-1], 
+                  intermediate_incoming[5][NN-1]
+                },
                 { 1 },
-                { intermediate_endBalance[NN-1], intermediate_outgoing[0][NN-1], intermediate_outgoing[1][NN-1], intermediate_outgoing[2][NN-1], intermediate_outgoing[3][NN-1], intermediate_outgoing[4][NN-1], intermediate_outgoing[5][NN-1]}), 
+                { 
+                  intermediate_endBalance[NN-1], 
+                  intermediate_outgoing[0][NN-1], 
+                  intermediate_outgoing[1][NN-1], 
+                  intermediate_outgoing[2][NN-1], 
+                  intermediate_outgoing[3][NN-1], 
+                  intermediate_outgoing[4][NN-1], 
+                  intermediate_outgoing[5][NN-1]
+                }), 
             FMT(this->annotation_prefix, "finalsum_%zu", 0));
         
 

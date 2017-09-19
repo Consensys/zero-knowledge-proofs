@@ -1,7 +1,8 @@
-var prompt = require('prompt');
-var fs = require('fs');
+var prompt = require('prompt')
+var colors = require("colors/safe")
+var fs = require('fs')
 
-const {spawn} = require('child_process');
+const {spawn} = require('child_process')
 const sha256 = require('sha256')
 
 var startBalance = 0
@@ -177,41 +178,75 @@ function generateProofInputs(fileSuffix, cb){
   }) 
 }
 
+function getPayment(incomingOrOutgoing, paymentNo, cb){
+  (function getOnePrompt() {
+    try {
+      var schema = {
+        properties: {
+          payment: {
+            type: 'integer',
+            description: incomingOrOutgoing=='Incoming'?colors.green("Incoming payment number " + (paymentNo+1)):colors.red("Outgoing payment number " + (paymentNo+1)),
+            required: true
+          }
+        }
+      }
+      prompt.get(schema, function(err, paymentAmountInputs){
+        if (err) { cb(err); return }
+        if(incomingOrOutgoing=='Incoming'){
+          incoming[paymentNo] = parseInt(paymentAmountInputs.payment)
+        } else {
+          outgoing[paymentNo] = parseInt(paymentAmountInputs.payment)
+        }
+        paymentNo++
+        if(paymentNo < noPayments){
+          getOnePrompt()
+        } else { 
+          cb()
+        }
+      })
+    } catch (exception) {
+      cb(exception);
+    }
+  })();
+}
+
 function handleGenerateMultiPaymentProof(cb){
   fs.unlink('proof1', function(error) {
     console.log('Please enter the amounts that are being paid')
-    prompt.get(['incoming1', 'incoming2', 'incoming3','incoming4', 'incoming5', 'incoming6', 'outgoing1', 'outgoing2', 'outgoing3', 'outgoing4', 'outgoing5', 'outgoing6'], function(err, paymentAmountInputs){
-      incoming[0] = parseInt(paymentAmountInputs.incoming1)
-      incoming[1] = parseInt(paymentAmountInputs.incoming2)
-      incoming[2] = parseInt(paymentAmountInputs.incoming3)
-      incoming[3] = parseInt(paymentAmountInputs.incoming4)
-      incoming[4] = parseInt(paymentAmountInputs.incoming5)
-      incoming[5] = parseInt(paymentAmountInputs.incoming6)
-      outgoing[0] = parseInt(paymentAmountInputs.outgoing1)
-      outgoing[1] = parseInt(paymentAmountInputs.outgoing2)
-      outgoing[2] = parseInt(paymentAmountInputs.outgoing3)
-      outgoing[3] = parseInt(paymentAmountInputs.outgoing4)
-      outgoing[4] = parseInt(paymentAmountInputs.outgoing5)
-      outgoing[5] = parseInt(paymentAmountInputs.outgoing6)
-      endBalance = startBalance
-      for(var i=0;i<noPayments;i++){
-        endBalance += incoming[i]
-        endBalance -= outgoing[i]
-      }
 
-      generateProofInputs("multi", function(msg1, err1){
-        if(err1){
-          console.log(msg1, err1)
-          cb()
-        } else {
-          handleExecuteProgram('./payment_multi_generate_proof', 'Loading Proving Key from file... (this takes a few seconds)', '', 'The proof generation failed\n\n', function(msgGenerateProof){
-            if(msgGenerateProof){
-              console.log('\n' + msgGenerateProof)
-            }
+    var paymentCount = 0;
+    getPayment('Incoming', 0, function(incomingErr){
+      if(incomingErr){
+        console.log(incomingErr)
+        cb()
+      } else {
+        getPayment('Outgoing', 0, function(outgoingErr){
+          if(outgoingErr){
+            console.log(outgoingErr)
             cb()
-          })
-        }
-      })
+          } else {
+            endBalance = startBalance
+            for(var i=0;i<noPayments;i++){
+              endBalance += incoming[i]
+              endBalance -= outgoing[i]
+            }
+
+            generateProofInputs("multi", function(msg1, err1){
+              if(err1){
+                console.log(msg1, err1)
+                cb()
+              } else {
+                handleExecuteProgram('./payment_multi_generate_proof', 'Loading Proving Key from file... (this takes a few seconds)', '', 'The proof generation failed\n\n', function(msgGenerateProof){
+                  if(msgGenerateProof){
+                    console.log('\n' + msgGenerateProof)
+                  }
+                  cb()
+                })
+              }
+            })
+          }
+        })
+      }
     })
   })
 }
