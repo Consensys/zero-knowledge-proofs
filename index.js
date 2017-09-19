@@ -6,9 +6,9 @@ const sha256 = require('sha256')
 
 var startBalance = 0
 var endBalance = 0
-var incoming = [0,0]
-var outgoing = [0,0]
-var noPayments = 2
+var incoming = [0,0,0]
+var outgoing = [0,0,0]
+var noPayments = 3
 
 if(process.argv.length!=3){
   console.log("you need to set your start balance.  Run the application using node index.js startBalance=1000")
@@ -180,11 +180,13 @@ function generateProofInputs(fileSuffix, cb){
 function handleGenerateMultiPaymentProof(cb){
   fs.unlink('proof1', function(error) {
     console.log('Please enter the amounts that are being paid')
-    prompt.get(['incoming1', 'incoming2', 'outgoing1', 'outgoing2'], function(err, paymentAmountInputs){
+    prompt.get(['incoming1', 'incoming2', 'incoming3', 'outgoing1', 'outgoing2', 'outgoing3'], function(err, paymentAmountInputs){
       incoming[0] = parseInt(paymentAmountInputs.incoming1)
       incoming[1] = parseInt(paymentAmountInputs.incoming2)
+      incoming[2] = parseInt(paymentAmountInputs.incoming3)
       outgoing[0] = parseInt(paymentAmountInputs.outgoing1)
       outgoing[1] = parseInt(paymentAmountInputs.outgoing2)
+      outgoing[2] = parseInt(paymentAmountInputs.outgoing3)
       endBalance = startBalance
       for(var i=0;i<noPayments;i++){
         endBalance += incoming[i]

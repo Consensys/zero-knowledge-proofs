@@ -4,7 +4,8 @@
 using namespace libff;
 
 const size_t sha256_digest_len = 256;
-const int unsigned noPayments = 2;
+const int unsigned noIncomingPayments = 3;
+const int unsigned noOutgoingPayments = 2;
 int unsigned counter;
 
 bool sha256_padding[256] = {1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
@@ -24,20 +25,20 @@ public:
 
     pb_variable_array<FieldT> intermediate_startBalance;
     pb_variable_array<FieldT> intermediate_endBalance;
-    pb_variable_array<FieldT> intermediate_incoming[noPayments];
-    pb_variable_array<FieldT> intermediate_outgoing[noPayments];
+    pb_variable_array<FieldT> intermediate_incoming[noIncomingPayments];
+    pb_variable_array<FieldT> intermediate_outgoing[noOutgoingPayments];
 
     std::shared_ptr<multipacking_gadget<FieldT> > unpack_inputs; /* multipacking gadget */
 
     std::shared_ptr<digest_variable<FieldT>> h_startBalance_var; 
     std::shared_ptr<digest_variable<FieldT>> h_endBalance_var; 
-    std::shared_ptr<digest_variable<FieldT>> h_incoming_var[noPayments]; 
-    std::shared_ptr<digest_variable<FieldT>> h_outgoing_var[noPayments]; 
+    std::shared_ptr<digest_variable<FieldT>> h_incoming_var[noIncomingPayments]; 
+    std::shared_ptr<digest_variable<FieldT>> h_outgoing_var[noOutgoingPayments]; 
 
     std::shared_ptr<digest_variable<FieldT>> r_startBalance_var; 
     std::shared_ptr<digest_variable<FieldT>> r_endBalance_var; 
-    std::shared_ptr<digest_variable<FieldT>> r_incoming_var[noPayments]; 
-    std::shared_ptr<digest_variable<FieldT>> r_outgoing_var[noPayments]; 
+    std::shared_ptr<digest_variable<FieldT>> r_incoming_var[noIncomingPayments]; 
+    std::shared_ptr<digest_variable<FieldT>> r_outgoing_var[noOutgoingPayments]; 
 
     std::shared_ptr<block_variable<FieldT>> h_r_startBalance_block; /* 512 bit block that contains startBalance + padding */
     std::shared_ptr<sha256_compression_function_gadget<FieldT>> h_r_startBalance; /* hashing gadget for startBalance */
@@ -45,11 +46,11 @@ public:
     std::shared_ptr<block_variable<FieldT>> h_r_endBalance_block; /* 512 bit block that contains endBalance + padding */
     std::shared_ptr<sha256_compression_function_gadget<FieldT>> h_r_endBalance; /* hashing gadget for endBalance */
 
-    std::shared_ptr<block_variable<FieldT>> h_r_incoming_block[noPayments]; /* 512 bit block that contains incoming + padding */
-    std::shared_ptr<sha256_compression_function_gadget<FieldT>> h_r_incoming[noPayments]; /* hashing gadget for incoming */
+    std::shared_ptr<block_variable<FieldT>> h_r_incoming_block[noIncomingPayments]; /* 512 bit block that contains incoming + padding */
+    std::shared_ptr<sha256_compression_function_gadget<FieldT>> h_r_incoming[noIncomingPayments]; /* hashing gadget for incoming */
 
-    std::shared_ptr<block_variable<FieldT>> h_r_outgoing_block[noPayments]; /* 512 bit block that contains outgoing + padding */
-    std::shared_ptr<sha256_compression_function_gadget<FieldT>> h_r_outgoing[noPayments]; /* hashing gadget for outgoing */
+    std::shared_ptr<block_variable<FieldT>> h_r_outgoing_block[noOutgoingPayments]; /* 512 bit block that contains outgoing + padding */
+    std::shared_ptr<sha256_compression_function_gadget<FieldT>> h_r_outgoing[noOutgoingPayments]; /* hashing gadget for outgoing */
 
     pb_variable<FieldT> zero;
     pb_variable_array<FieldT> padding_var; /* SHA256 length padding */
@@ -58,7 +59,7 @@ public:
     payment_multi_gadget(protoboard<FieldT> &pb) : gadget<FieldT>(pb, "payment_multi_gadget")
     {
         // Allocate space for the verifier input.
-        const size_t input_size_in_bits = sha256_digest_len * (2 + (noPayments*2));
+        const size_t input_size_in_bits = sha256_digest_len * (2 + noIncomingPayments + noOutgoingPayments);   //The 2 are the beforeBalance and the afterBalance
         {
             // We use a "multipacking" technique which allows us to constrain
             // the input bits in as few field elements as possible.
@@ -75,9 +76,13 @@ public:
         intermediate_startBalance.allocate(this->pb, sha256_digest_len/2, "intermediate_startBalance");
         intermediate_endBalance.allocate(this->pb, sha256_digest_len/2, "intermediate_endBalance");
 
-        for (counter = 0; counter < noPayments; counter++)
+        for (counter = 0; counter < noIncomingPayments; counter++)
         {
           intermediate_incoming[counter].allocate(this->pb, sha256_digest_len/2, "intermediate_incoming" + std::to_string(counter+1));
+        }
+
+        for (counter = 0; counter < noOutgoingPayments; counter++)
+        {
           intermediate_outgoing[counter].allocate(this->pb, sha256_digest_len/2, "intermediate_outgoing" + std::to_string(counter+1));
         }
 
@@ -92,33 +97,41 @@ public:
         // Verifier (and prover) inputs:
         h_startBalance_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len, "h_startBalance"));
         h_endBalance_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len, "h_endBalance"));
-        for (counter = 0; counter < noPayments; counter++)
+        for (counter = 0; counter < noIncomingPayments; counter++)
         {
           h_incoming_var[counter].reset(new digest_variable<FieldT>(pb, sha256_digest_len, "h_incoming" + std::to_string(counter+1)));
+        }
+        for (counter = 0; counter < noOutgoingPayments; counter++)
+        {
           h_outgoing_var[counter].reset(new digest_variable<FieldT>(pb, sha256_digest_len, "h_outgoing" + std::to_string(counter+1)));
         }
 
         input_as_bits.insert(input_as_bits.end(), h_startBalance_var->bits.begin(), h_startBalance_var->bits.end());
         input_as_bits.insert(input_as_bits.end(), h_endBalance_var->bits.begin(), h_endBalance_var->bits.end());
-        for (counter = 0; counter < noPayments; counter++)
+        for (counter = 0; counter < noIncomingPayments; counter++)
         {
           input_as_bits.insert(input_as_bits.end(), h_incoming_var[counter]->bits.begin(), h_incoming_var[counter]->bits.end());
         }
-        for (counter = 0; counter < noPayments; counter++)
+        for (counter = 0; counter < noOutgoingPayments; counter++)
         {
           input_as_bits.insert(input_as_bits.end(), h_outgoing_var[counter]->bits.begin(), h_outgoing_var[counter]->bits.end());
         }
 
         // Multipacking
+            std::cout << "**************** input_size_bits: " << input_size_in_bits << "\n";
+            std::cout << "**************** input_as_bits.size(): " << input_as_bits.size() << "\n";
         assert(input_as_bits.size() == input_size_in_bits);
         unpack_inputs.reset(new multipacking_gadget<FieldT>(this->pb, input_as_bits, input_as_field_elements, FieldT::capacity(), FMT(this->annotation_prefix, " unpack_inputs")));
 
         // Prover inputs:
         r_startBalance_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len, "r_startBalance"));
         r_endBalance_var.reset(new digest_variable<FieldT>(pb, sha256_digest_len, "r_endBalance"));
-        for (counter = 0; counter < noPayments; counter++)
+        for (counter = 0; counter < noIncomingPayments; counter++)
         {
           r_incoming_var[counter].reset(new digest_variable<FieldT>(pb, sha256_digest_len, "r_incoming" + std::to_string(counter+1)));
+        }
+        for (counter = 0; counter < noOutgoingPayments; counter++)
+        {
           r_outgoing_var[counter].reset(new digest_variable<FieldT>(pb, sha256_digest_len, "r_outgoing" + std::to_string(counter+1)));
         }
 
@@ -148,7 +161,7 @@ public:
                                                                   "h_r_endBalance"));
 
         
-        for (counter = 0; counter < noPayments; counter++)
+        for (counter = 0; counter < noIncomingPayments; counter++)
         {
           h_r_incoming_block[counter].reset(new block_variable<FieldT>(pb, {
               r_incoming_var[counter]->bits,
@@ -162,7 +175,7 @@ public:
                                                                     "h_r_incoming" + std::to_string(counter+1)));
         }
 
-        for (counter = 0; counter < noPayments; counter++)
+        for (counter = 0; counter < noOutgoingPayments; counter++)
         {
 
           h_r_outgoing_block[counter].reset(new block_variable<FieldT>(pb, {
@@ -187,9 +200,12 @@ public:
         // is established by `unpack_inputs->generate_r1cs_constraints(true)`
         r_startBalance_var->generate_r1cs_constraints();
         r_endBalance_var->generate_r1cs_constraints();
-        for (counter = 0; counter < noPayments; counter++)
+        for (counter = 0; counter < noIncomingPayments; counter++)
         {
           r_incoming_var[counter]->generate_r1cs_constraints();
+        }
+        for (counter = 0; counter < noOutgoingPayments; counter++)
+        {
           r_outgoing_var[counter]->generate_r1cs_constraints();
         }
 
@@ -211,7 +227,7 @@ public:
                 r_endBalance_var->bits[0]),
             FMT(this->annotation_prefix, " zero2_%zu", 0));
 
-        for (counter = 0; counter < noPayments; counter++)
+        for (counter = 0; counter < noIncomingPayments; counter++)
         {
           this->pb.add_r1cs_constraint(
               r1cs_constraint<FieldT>(
@@ -221,14 +237,14 @@ public:
               FMT(this->annotation_prefix, " zero" + std::to_string(counter+3) + "_%zu", 0));
         }
 
-        for (counter = 0; counter < noPayments; counter++)
+        for (counter = 0; counter < noOutgoingPayments; counter++)
         {
           this->pb.add_r1cs_constraint(
               r1cs_constraint<FieldT>(
                   intermediate_outgoing[counter][0],
                   1, 
                   r_outgoing_var[counter]->bits[0]),
-              FMT(this->annotation_prefix, " zero" + std::to_string(counter+5) + "_%zu", 0));
+              FMT(this->annotation_prefix, " zero" + std::to_string(counter+3+noIncomingPayments) + "_%zu", 0));
         }
 
         for (unsigned int i = 1; i < NN; i++) {
@@ -247,7 +263,7 @@ public:
                   { intermediate_endBalance[i-1] * 2, r_endBalance_var->bits[i] }), 
               FMT(this->annotation_prefix, " sum2_%zu", i));
 
-          for (counter = 0; counter < noPayments; counter++)
+          for (counter = 0; counter < noIncomingPayments; counter++)
           {
             this->pb.add_r1cs_constraint(
                 r1cs_constraint<FieldT>(
@@ -257,33 +273,36 @@ public:
                 FMT(this->annotation_prefix, " sum" + std::to_string(counter+3) + "_%zu", i));
           }
 
-          for (counter = 0; counter < noPayments; counter++)
+          for (counter = 0; counter < noOutgoingPayments; counter++)
           {
             this->pb.add_r1cs_constraint(
                 r1cs_constraint<FieldT>(
                     { intermediate_outgoing[counter][i] },
                     { 1 }, 
                     { intermediate_outgoing[counter][i-1] * 2, r_outgoing_var[counter]->bits[i] }), 
-                FMT(this->annotation_prefix, " sum" + std::to_string(counter+5) + "_%zu", i));
+                FMT(this->annotation_prefix, " sum" + std::to_string(counter+3+noIncomingPayments) + "_%zu", i));
           }
         }
 
         // Constraint that start bal + sum(incoming) = end bal + sum(outgoing)
-
+/*
         this->pb.add_r1cs_constraint(
             r1cs_constraint<FieldT>(
                 { intermediate_startBalance[NN-1], intermediate_incoming[0][NN-1], intermediate_incoming[1][NN-1]},
                 { 1 },
                 { intermediate_endBalance[NN-1], intermediate_outgoing[0][NN-1], intermediate_outgoing[1][NN-1]}), 
             FMT(this->annotation_prefix, "finalsum_%zu", 0));
-        
+*/        
 
         // These are the constraints to ensure the hashes validate.
         h_r_startBalance->generate_r1cs_constraints();
         h_r_endBalance->generate_r1cs_constraints();
-        for (counter = 0; counter < noPayments; counter++)
+        for (counter = 0; counter < noIncomingPayments; counter++)
         {
           h_r_incoming[counter]->generate_r1cs_constraints();
+        }
+        for (counter = 0; counter < noOutgoingPayments; counter++)
+        {
           h_r_outgoing[counter]->generate_r1cs_constraints();
         }
     }
@@ -301,9 +320,12 @@ public:
         // Fill our digests with our witnessed data
         r_startBalance_var->bits.fill_with_bits(this->pb, r_startBalance);
         r_endBalance_var->bits.fill_with_bits(this->pb, r_endBalance);
-        for (counter = 0; counter < noPayments; counter++)
+        for (counter = 0; counter < noIncomingPayments; counter++)
         {
           r_incoming_var[counter]->bits.fill_with_bits(this->pb, r_incoming[counter]);
+        }
+        for (counter = 0; counter < noOutgoingPayments; counter++)
+        {
           r_outgoing_var[counter]->bits.fill_with_bits(this->pb, r_outgoing[counter]);
         }
  
@@ -312,38 +334,47 @@ public:
         std::vector<FieldT> interm_startBalance(NN);
         std::vector<FieldT> interm_endBalance(NN);
 
-        std::array<std::vector<FieldT>, noPayments> interm_incoming{{std::vector<FieldT>(NN), 
+        std::array<std::vector<FieldT>, noIncomingPayments> interm_incoming{{std::vector<FieldT>(NN), 
                                     std::vector<FieldT>(NN) 
                                     }};
 
-        std::array<std::vector<FieldT>, noPayments> interm_outgoing{{std::vector<FieldT>(NN), 
+        std::array<std::vector<FieldT>, noIncomingPayments> interm_outgoing{{std::vector<FieldT>(NN), 
                                     std::vector<FieldT>(NN) 
                                     }};
 
 
         interm_startBalance[0] = r_startBalance[0] ? FieldT::one() : FieldT::zero();
         interm_endBalance[0] = r_endBalance[0] ? FieldT::one() : FieldT::zero();
-        for (counter = 0; counter < noPayments; counter++)
+        for (counter = 0; counter < noIncomingPayments; counter++)
         {
           interm_incoming[counter][0] = r_incoming[counter][0] ? FieldT::one() : FieldT::zero();
-          interm_outgoing[counter][0] = r_outgoing[counter][0] ? FieldT::one() : FieldT::zero();
+        }
+        for (counter = 0; counter < noOutgoingPayments; counter++)
+        {
+          interm_incoming[counter][0] = r_incoming[counter][0] ? FieldT::one() : FieldT::zero();
         }
 
         for (size_t i=1; i<NN; i++) {
           interm_startBalance[i] = interm_startBalance[i-1] * 2 + (r_startBalance[i] ? FieldT::one() : FieldT::zero());
           interm_endBalance[i] = interm_endBalance[i-1] * 2 + (r_endBalance[i] ? FieldT::one() : FieldT::zero());
-          for (counter = 0; counter < noPayments; counter++)
+          for (counter = 0; counter < noIncomingPayments; counter++)
           {
             interm_incoming[counter][i] = interm_incoming[counter][i-1] * 2 + (r_incoming[counter][i] ? FieldT::one() : FieldT::zero());
+          }
+          for (counter = 0; counter < noOutgoingPayments; counter++)
+          {
             interm_outgoing[counter][i] = interm_outgoing[counter][i-1] * 2 + (r_outgoing[counter][i] ? FieldT::one() : FieldT::zero());
           }
         }
 
         intermediate_startBalance.fill_with_field_elements(this->pb, interm_startBalance);
         intermediate_endBalance.fill_with_field_elements(this->pb, interm_endBalance);
-        for (counter = 0; counter < noPayments; counter++)
+        for (counter = 0; counter < noIncomingPayments; counter++)
         {
           intermediate_incoming[counter].fill_with_field_elements(this->pb, interm_incoming[counter]);
+        }
+        for (counter = 0; counter < noOutgoingPayments; counter++)
+        {
           intermediate_outgoing[counter].fill_with_field_elements(this->pb, interm_outgoing[counter]);
         }
 
@@ -353,18 +384,24 @@ public:
         // Generate witnesses as necessary in our other gadgets
         h_r_startBalance->generate_r1cs_witness();
         h_r_endBalance->generate_r1cs_witness();
-        for (counter = 0; counter < noPayments; counter++)
+        for (counter = 0; counter < noIncomingPayments; counter++)
         {
           h_r_incoming[counter]->generate_r1cs_witness();
+        }
+        for (counter = 0; counter < noOutgoingPayments; counter++)
+        {
           h_r_outgoing[counter]->generate_r1cs_witness();
         }
         unpack_inputs->generate_r1cs_witness_from_bits();
 
         h_startBalance_var->bits.fill_with_bits(this->pb, h_startBalance);
         h_endBalance_var->bits.fill_with_bits(this->pb, h_endBalance);
-        for (counter = 0; counter < noPayments; counter++)
+        for (counter = 0; counter < noIncomingPayments; counter++)
         {
           h_incoming_var[counter]->bits.fill_with_bits(this->pb, h_incoming[counter]);
+        }
+        for (counter = 0; counter < noOutgoingPayments; counter++)
+        {
           h_outgoing_var[counter]->bits.fill_with_bits(this->pb, h_outgoing[counter]);
         }
     }
@@ -383,9 +420,12 @@ r1cs_primary_input<FieldT> l_input_map_multi(const bit_vector &h_startBalance,
 
     assert(h_startBalance.size() == sha256_digest_len);
     assert(h_endBalance.size() == sha256_digest_len);
-    for (counter = 0; counter < noPayments; counter++)
+    for (counter = 0; counter < noIncomingPayments; counter++)
     {
       assert(h_incoming[counter].size() == sha256_digest_len);
+    }
+    for (counter = 0; counter < noOutgoingPayments; counter++)
+    {
       assert(h_outgoing[counter].size() == sha256_digest_len);
     }
 
@@ -394,11 +434,11 @@ r1cs_primary_input<FieldT> l_input_map_multi(const bit_vector &h_startBalance,
     bit_vector input_as_bits;
     input_as_bits.insert(input_as_bits.end(), h_startBalance.begin(), h_startBalance.end());
     input_as_bits.insert(input_as_bits.end(), h_endBalance.begin(), h_endBalance.end());
-    for (counter = 0; counter < noPayments; counter++)
+    for (counter = 0; counter < noIncomingPayments; counter++)
     {
       input_as_bits.insert(input_as_bits.end(), h_incoming[counter].begin(), h_incoming[counter].end());
     }
-    for (counter = 0; counter < noPayments; counter++)
+    for (counter = 0; counter < noOutgoingPayments; counter++)
     {
       input_as_bits.insert(input_as_bits.end(), h_outgoing[counter].begin(), h_outgoing[counter].end());
     }

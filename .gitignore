@@ -6,9 +6,6 @@ depsrc
 *.swp
 libsnark
 payment_*
-verificationKey*
-provingKey*
 proof*
-privateInputParameters*
-publicInputParameters*
+proving*
 node_modules/
