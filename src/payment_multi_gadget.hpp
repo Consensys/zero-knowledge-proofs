@@ -1,11 +1,13 @@
 #include "libsnark/gadgetlib1/gadgets/hashes/sha256/sha256_gadget.hpp"
 #include "libff/algebra/fields/field_utils.hpp"
+#include <typeinfo>
+
 
 using namespace libff;
 
 const size_t sha256_digest_len = 256;
-const int unsigned noIncomingPayments = 3;
-const int unsigned noOutgoingPayments = 3;
+const int unsigned noIncomingPayments = 6;   //Note, you must update the variables in the r1 constraint on line 288
+const int unsigned noOutgoingPayments = 6;
 int unsigned counter;
 
 bool sha256_padding[256] = {1,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
@@ -54,7 +56,6 @@ public:
 
     pb_variable<FieldT> zero;
     pb_variable_array<FieldT> padding_var; /* SHA256 length padding */
-
 
     payment_multi_gadget(protoboard<FieldT> &pb) : gadget<FieldT>(pb, "payment_multi_gadget")
     {
@@ -285,12 +286,11 @@ public:
         }
 
         // Constraint that start bal + sum(incoming) = end bal + sum(outgoing)
-
         this->pb.add_r1cs_constraint(
             r1cs_constraint<FieldT>(
-                { intermediate_startBalance[NN-1], intermediate_incoming[0][NN-1], intermediate_incoming[1][NN-1], intermediate_incoming[2][NN-1]},
+                { intermediate_startBalance[NN-1], intermediate_incoming[0][NN-1], intermediate_incoming[1][NN-1], intermediate_incoming[2][NN-1], intermediate_incoming[3][NN-1], intermediate_incoming[4][NN-1], intermediate_incoming[5][NN-1]},
                 { 1 },
-                { intermediate_endBalance[NN-1], intermediate_outgoing[0][NN-1], intermediate_outgoing[1][NN-1], intermediate_outgoing[2][NN-1]}), 
+                { intermediate_endBalance[NN-1], intermediate_outgoing[0][NN-1], intermediate_outgoing[1][NN-1], intermediate_outgoing[2][NN-1], intermediate_outgoing[3][NN-1], intermediate_outgoing[4][NN-1], intermediate_outgoing[5][NN-1]}), 
             FMT(this->annotation_prefix, "finalsum_%zu", 0));
         
 
