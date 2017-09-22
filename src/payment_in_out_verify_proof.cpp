@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
 
   // Read verification key in from file
   r1cs_ppzksnark_verification_key<default_r1cs_ppzksnark_pp> verificationKey_in;
-  ifstream fileIn("verificationKey");
+  ifstream fileIn("verificationKey_single");
   stringstream verificationKeyFromFile;
   if (fileIn) {
      verificationKeyFromFile << fileIn.rdbuf();
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
   }
   verificationKeyFromFile >> verificationKey_in;
 
-  return verifyProof(verificationKey_in, "proof1");
+  return verifyProof(verificationKey_in, "proof_single");
 }
 
 

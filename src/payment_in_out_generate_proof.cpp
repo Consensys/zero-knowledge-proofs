@@ -55,9 +55,36 @@ int genProof(r1cs_ppzksnark_proving_key<default_r1cs_ppzksnark_pp> provingKey_in
   }
 }
 
+int getUserInput(r1cs_ppzksnark_proving_key<default_r1cs_ppzksnark_pp> provingKey_in)
+{
+  string inputTemp = "";
+  int result=0;
+  cout << "Press enter p to generate a proof or q to quit" << endl;
+  cin >> inputTemp;  
+  cout << "Input from console: " << inputTemp << endl;
+  if(inputTemp != "q")
+  {
+    result = genProof(provingKey_in, "proof_single");
+    if(result!=0)
+    {
+      cout << "There was an error generating the proof" << endl;
+      return getUserInput(provingKey_in);
+    }
+    else
+    {
+      return getUserInput(provingKey_in);
+    }
+  }
+  else
+  {
+    return 0;
+  }
+}
+
+
 int main(int argc, char *argv[])
 {
-  string keyFileName = "provingKey";
+  string keyFileName = "provingKey_single";
 
   // Initialize the curve parameters.
   default_r1cs_ppzksnark_pp::init_public_params();
@@ -73,5 +100,5 @@ int main(int argc, char *argv[])
  
   provingKeyFromFile >> provingKey_in;
  
-  return genProof(provingKey_in, "proof1");
+  return getUserInput(provingKey_in);
 }
