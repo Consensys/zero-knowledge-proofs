@@ -396,8 +396,9 @@ function handleSinglePayment(){
       if(answer.option == 1){
         proofCodeBlocking = true
         handleExecuteProgram('./payment_in_out_generate_keypair', 'Generating key pair...', 'The key pair has been generated and the keys written to files (provingKey and verificationKey)', 'The key pair failed\n\n', function(){
-          checkForKeypairAndRunGenerateProof('provingKey_single', 'single')
-          handleSinglePayment()
+          checkForKeypairAndRunGenerateProof('provingKey_single', 'single', function(){
+            handleSinglePayment()
+          })
         })
       } else if (answer.option == 2){
         handleGenerateSinglePaymentProof(function(){
@@ -448,8 +449,9 @@ function handleMultiplePayments(){
     prompt.get(['option'], function(err, answer){
       if(answer.option == 1){
         handleExecuteProgram('./payment_multi_generate_keypair', 'Generating key pair...', 'The key pair has been generated and the keys written to files (provingKey_multi and verificationKey_multi)', 'The key pair failed\n\n', function(){
-          checkForKeypairAndRunGenerateProof('provingKey_multi', 'multi')
-          handleMultiplePayments()
+          checkForKeypairAndRunGenerateProof('provingKey_multi', 'multi', function(){
+            handleMultiplePayments()
+          })
         })
       } else if (answer.option == 2){
         handleGenerateMultiPaymentProof(function(){
