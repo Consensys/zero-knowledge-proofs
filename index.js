@@ -1,18 +1,15 @@
 var prompt = require('prompt')
-var colors = require("colors/safe")
+var colors = require('colors/safe')
 var fs = require('fs')
+var automation = require('./client/automation.js')
 
-const {spawn} = require('child_process')
 const sha256 = require('sha256')
-var runMultiProofGenerator;
-var runSingleProofGenerator;
 
 var startBalance = 0
 var endBalance = 0
 var incoming = [0,0,0,0,0,0]
 var outgoing = [0,0,0,0,0,0]
 var noPayments = 6
-var proofCodeBlocking = false
 
 if(process.argv.length!=3){
   console.log("you need to set your start balance.  Run the application using node index.js startBalance=1000")
@@ -25,133 +22,6 @@ process.argv.forEach(function (val, index, array) {
     endBalance = startBalance
   }
 });
-
-function getMatches(string, regex) {
-  var matches = [];
-  var match;
-  while (match = regex.exec(string)) {
-    matches.push(match[0]);
-  }
-  return matches;
-}
-
-function handleExecuteGenerateSingleProof(){
-
-  runSingleProofGenerator.stdout.on('data', (data) => {
-    dataString = data.toString()
-    //console.log(dataString)
-
-    if(dataString.indexOf('Press enter p to generate a proof or q to quit')>-1){
-      console.log('\nProving key succesfully loaded\n')
-      proofCodeBlocking = false
-    }
-
-    if(dataString.indexOf('System not satisfied!')>-1){
-      console.log('Proof generation unsuccesful: System not satisfied')
-      proofCodeBlocking = false
-    }
-    if(dataString.indexOf('Proving key loaded into memory')>-1){
-      proofCodeBlocking = false
-    }
-
-    if(data.indexOf('Compute the proof')>-1){
-      if(data.indexOf('(enter)')>-1){
-        console.log('\nGenerating proof')
-      } else {
-        var matches = getMatches(dataString, /\[[0-9]{0,2}.[0-9]*s/g)
-        var noSecs = matches[1].substring(1,matches[1].length)
-        console.log('\nProof generation ended:', noSecs)
-        proofCodeBlocking = false
-      }
-    } else {
-      process.stdout.write('.')
-    }
-
-  })
-
-  runSingleProofGenerator.stderr.on('data', (data) => {
-    console.log(data.toString())
-  })
-}
-
-function handleExecuteGenerateMultiProof(){
-
-  runMultiProofGenerator.stdout.on('data', (data) => {
-    dataString = data.toString()
-//    console.log(dataString)
-
-    if(dataString.indexOf('Press enter p to generate a proof or q to quit')>-1){
-      console.log('\nProving key succesfully loaded\n')
-      proofCodeBlocking = false
-    }
-
-    if(dataString.indexOf('System not satisfied!')>-1){
-      console.log('Proof generation unsuccesful: System not satisfied')
-      proofCodeBlocking = false
-    }
-    if(dataString.indexOf('Proving key loaded into memory')>-1){
-      proofCodeBlocking = false
-    }
-
-    if(data.indexOf('Compute the proof')>-1){
-      if(data.indexOf('(enter)')>-1){
-        console.log('\nGenerating proof')
-      } else {
-        var matches = getMatches(dataString, /\[[0-9]{0,2}.[0-9]*s/g)
-        var noSecs = matches[1].substring(1,matches[1].length)
-        console.log('\nProof generation ended:', noSecs)
-        proofCodeBlocking = false
-      }
-    } else {
-      process.stdout.write('.')
-    }
-
-  })
-
-  runMultiProofGenerator.stderr.on('data', (data) => {
-    console.log(data.toString())
-  })
-
-}
-
-function handleExecuteProgram(programName, msgStart, msgEnd, msgError, cb){
-  console.log(msgStart)
-
-  var succesfullyCompleted=true
-  const runCommand = spawn(programName)
-
-  runCommand.stdout.on('data', (data) => {
-    dataString = data.toString()
-    if(data.indexOf('(leave) Call to r1cs_ppzksnark_online_verifier_strong_IC')>-1){
-      var matches = getMatches(dataString, /verifier_strong_IC.\[[0-9]{0,2}.[0-9]*s/g)
-      var noSecs = ''  
-      if(matches && matches.length>0){
-        noSecs = matches[0].substring(20,matches[0].length)
-      } else {
-        console.log(dataString)
-      }
-      console.log('\nProof verification ended:', noSecs)
-    } else {
-      process.stdout.write('.')
-    }
-  })
-
-  runCommand.stderr.on('data', (data) => {
-    console.log(data.toString())
-    succesfullyCompleted = false
-  })
-
-  runCommand.on('close', (code) => {
-    console.log()
-    proofCodeBlocking=false
-    if(code=='1' || !succesfullyCompleted){
-      cb(msgError)
-    } else {
-      cb(null)
-    }
-  })
-}
-
 longToByteArray = function(valueToConvert) {
   // we want to represent the input as a 8-bytes array
   var byteArray = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -259,22 +129,10 @@ function generateProofInputs(fileSuffix, cb){
   }) 
 }
 
-function loadProvingKeyFromFile(multiOrSingle){
-  console.log('Loading proving key from file.  This will take a few seconds')
-  if(multiOrSingle=='multi'){
-    runMultiProofGenerator = spawn('./payment_multi_generate_proof')
-    handleExecuteGenerateMultiProof()
-  } else {
-    runSingleProofGenerator = spawn('./payment_in_out_generate_proof')
-    handleExecuteGenerateSingleProof()
-  }
-}
-
 function checkForKeypairAndRunGenerateProof(fileName, multiOrSingle, cb){
   fs.exists(fileName, (exists) => {
     if(exists==true){
-      proofCodeBlocking=true
-      loadProvingKeyFromFile(multiOrSingle)
+      automation.HandleLoadProvingKey(multiOrSingle)
     } else {
       console.log("\nThe provingKey and verificationKey need to be generated\n")
     }
@@ -316,7 +174,7 @@ function getPayment(incomingOrOutgoing, paymentNo, cb){
 
 function handleGenerateMultiPaymentProof(cb){
   fs.unlink('proof_multi', function(error) {
-    proofCodeBlocking = true
+    automation.SetProofCodeBlocking(true)
     console.log('Please enter the amounts that are being paid')
 
     var paymentCount = 0;
@@ -341,7 +199,7 @@ function handleGenerateMultiPaymentProof(cb){
                 console.log(msg1, err1)
               } else {
                 console.log('Process started')
-                runMultiProofGenerator.stdin.write('p\n')
+                automation.GenerateProof()
               }
               cb()
             })
@@ -354,7 +212,7 @@ function handleGenerateMultiPaymentProof(cb){
 
 function handleGenerateSinglePaymentProof(cb){
   fs.unlink('proof_single', function(error) {
-    proofCodeBlocking = true
+    automation.SetProofCodeBlocking(true)
     console.log('Please enter the amounts that are being paid')
     prompt.get(['incoming', 'outgoing'], function(err, paymentAmountInputs){
       incoming[0] = parseInt(paymentAmountInputs.incoming)
@@ -372,7 +230,7 @@ function handleGenerateSinglePaymentProof(cb){
           console.log(msg1, err1)
         } else {
           console.log('Process started')
-          runSingleProofGenerator.stdin.write('p\n')
+          automation.GenerateProof()
         }
         cb()
       })
@@ -381,7 +239,7 @@ function handleGenerateSinglePaymentProof(cb){
 }
 
 function handleSinglePayment(){
-  if(proofCodeBlocking==true){
+  if(automation.GetProofCodeBlocking()==true){
     process.stdout.write('.')
     setTimeout(handleSinglePayment, 500)
   } else {
@@ -394,8 +252,11 @@ function handleSinglePayment(){
     console.log('Please select an option:\n1) Create a new key pair\n2) Generate a single-payment proof\n3) Verify single-payment proof\n0) Quit')
     prompt.get(['option'], function(err, answer){
       if(answer.option == 1){
-        proofCodeBlocking = true
-        handleExecuteProgram('./payment_in_out_generate_keypair', 'Generating key pair...', 'The key pair has been generated and the keys written to files (provingKey and verificationKey)', 'The key pair failed\n\n', function(){
+        automation.SetProofCodeBlocking(true)
+        if(automation.GetGeneratorRunning()==true){
+          automation.ShutDown()
+        }
+        automation.HandleExecuteProgram('./payment_in_out_generate_keypair', 'Generating key pair...', 'The key pair has been generated and the keys written to files (provingKey and verificationKey)', 'The key pair failed\n\n', function(){
           checkForKeypairAndRunGenerateProof('provingKey_single', 'single', function(){
             handleSinglePayment()
           })
@@ -405,7 +266,7 @@ function handleSinglePayment(){
           handleSinglePayment()
         })
       } else if(answer.option == 3){
-        handleExecuteProgram('./payment_in_out_verify_proof', '', '', 'The proof verification failed\n\n', function(verifyErr){
+        automation.HandleExecuteProgram('./payment_in_out_verify_proof', '', '', 'The proof verification failed\n\n', function(verifyErr){
           if(verifyErr){
             console.log(verifyErr)
             handleSinglePayment()
@@ -420,7 +281,7 @@ function handleSinglePayment(){
           }
         })
       } else {
-        runSingleProofGenerator.stdin.write('q\n')
+        automation.ShutDown()
         console.log('Quiting...')
       }
     })
@@ -428,7 +289,7 @@ function handleSinglePayment(){
 }
 
 function handleMultiplePayments(){
-  if(proofCodeBlocking==true){
+  if(automation.GetProofCodeBlocking()==true){
     process.stdout.write('.')
     setTimeout(handleMultiplePayments, 500)
   } else {
@@ -448,7 +309,11 @@ function handleMultiplePayments(){
     console.log('Please select an option:\n1) Create a new key pair\n2) Generate a multi-payment proof\n3) Verify multi-payment proof\n0) Quit')
     prompt.get(['option'], function(err, answer){
       if(answer.option == 1){
-        handleExecuteProgram('./payment_multi_generate_keypair', 'Generating key pair...', 'The key pair has been generated and the keys written to files (provingKey_multi and verificationKey_multi)', 'The key pair failed\n\n', function(){
+        automation.SetProofCodeBlocking(true)
+        if(automation.GetGeneratorRunning()==true){
+          automation.ShutDown()
+        }
+        automation.HandleExecuteProgram('./payment_multi_generate_keypair', 'Generating key pair...', 'The key pair has been generated and the keys written to files (provingKey_multi and verificationKey_multi)', 'The key pair failed\n\n', function(){
           checkForKeypairAndRunGenerateProof('provingKey_multi', 'multi', function(){
             handleMultiplePayments()
           })
@@ -458,7 +323,7 @@ function handleMultiplePayments(){
           handleMultiplePayments()
         })
       } else if(answer.option == 3){
-        handleExecuteProgram('./payment_multi_verify_proof', '', '', 'The proof verification failed\n\n', function(verifyErr){
+        automation.HandleExecuteProgram('./payment_multi_verify_proof', '', '', 'The proof verification failed\n\n', function(verifyErr){
           if(verifyErr){
             console.log(verifyErr)
             handleMultiplePayments()
@@ -474,7 +339,7 @@ function handleMultiplePayments(){
           }
         })
       } else {
-        runMultiProofGenerator.stdin.write('q\n')
+        automation.ShutDown()
         console.log('Quiting...')
       }
     })
