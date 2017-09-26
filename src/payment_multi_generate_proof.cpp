@@ -73,12 +73,12 @@ int getUserInput(r1cs_ppzksnark_proving_key<default_r1cs_ppzksnark_pp> provingKe
 {
   string inputTemp = "";
   int result=0;
-  cout << "Press enter p to generate a proof or q to quit" << endl;
+  cout << "Press enter paymentId to generate a proof or q to quit" << endl;
   cin >> inputTemp;  
   cout << "Input from console: " << inputTemp << endl;
   if(inputTemp != "q")
   {
-    result = genProof(provingKey_in, "proof_multi");
+    result = genProof(provingKey_in, "proof_multi_" + inputTemp);
     if(result!=0)
     {
       cout << "There was an error generating the proof" << endl;

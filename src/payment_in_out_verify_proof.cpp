@@ -12,7 +12,7 @@
 using namespace libsnark;
 using namespace std;
 
-int verifyProof(r1cs_ppzksnark_verification_key<default_r1cs_ppzksnark_pp> verificationKey_in, string proofFileName)
+int verifyProof(r1cs_ppzksnark_verification_key<default_r1cs_ppzksnark_pp> verificationKey_in, string proofFileName, string publicInputs)
 {
   // Read proof in from file
   //libsnark::r1cs_ppzksnark_proof<libff::alt_bn128_pp> proof_in;
@@ -37,7 +37,7 @@ int verifyProof(r1cs_ppzksnark_verification_key<default_r1cs_ppzksnark_pp> verif
   std::vector<bool> h_endBalance_bv(256);
   std::vector<bool> h_incoming_bv(256);
   std::vector<bool> h_outgoing_bv(256);
-  vector<vector<unsigned long int>> values = fillValuesFromfile("publicInputParameters_single");
+  vector<vector<unsigned long int>> values = fillValuesFromfile(publicInputs);
   h_startBalance_bv = int_list_to_bits_local(values[0], 8);
   h_endBalance_bv = int_list_to_bits_local(values[1], 8);
   h_incoming_bv = int_list_to_bits_local(values[2], 8);
@@ -48,10 +48,10 @@ int verifyProof(r1cs_ppzksnark_verification_key<default_r1cs_ppzksnark_pp> verif
   bool isVerified = verify_payment_in_out_proof(verificationKey_in, *proof_in, h_startBalance_bv, h_endBalance_bv, h_incoming_bv, h_outgoing_bv);
 
   if(isVerified){
-    cout << "Proof was verified!!" << endl;
+    cout << "Proof was verified!!" << proofFileName << endl;
     return 0;
   } else {
-    cout << "Proof was not verified!!" << endl;
+    cout << "Proof was not verified!!" << proofFileName << endl;
     return 1;
   }
 }
@@ -71,7 +71,11 @@ int main(int argc, char *argv[])
   }
   verificationKeyFromFile >> verificationKey_in;
 
-  return verifyProof(verificationKey_in, "proof_single");
+  string proofName = "proof_single_";
+  string proofNameWithId = proofName + argv[1];
+  string publicInputs = "publicInputParameters_single_";
+  string publicInputsWithId = publicInputs + argv[1];
+  return verifyProof(verificationKey_in, proofNameWithId, publicInputsWithId);
 }
 
 

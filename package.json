@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/ConsenSys/zero-knowledge-proofs#readme",
   "dependencies": {
+    "events": "^1.1.1",
     "prompt": "^1.0.0",
     "sha256": "^0.2.0"
   }

@@ -76,7 +76,9 @@ int main(int argc, char *argv[])
   }
   verificationKeyFromFile >> verificationKey_in;
 
-  return verifyProof(verificationKey_in, "proof_multi");
+  string proofName = "proof_multi_";
+  string proofNameWithId = proofName + argv[1];
+  return verifyProof(verificationKey_in, proofNameWithId);
 }
 
 

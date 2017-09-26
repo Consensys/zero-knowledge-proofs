@@ -1,8 +1,12 @@
 const {spawn} = require('child_process')
+var events = require('events');
+var eventEmitter = new events.EventEmitter();
 
-var proofGenerator
+var multiProofGenerator
+var singleProofGenerator
 var proofCodeBlocking = false
-var generatorIsRunning = false
+var multiProofGeneratorIsRunning = false
+var singleProofGeneratorIsRunning = false
 
 function getMatches(string, regex) {
   var matches = [];
@@ -21,37 +25,42 @@ function setProofCodeBlocking(value){
   proofCodeBlocking=value
 }
 
-function getGeneratorRunning(){
-  return generatorIsRunning
+function shutDown(multiOrSingle){
+  if(multiOrSingle=='multi'){
+    multiProofGenerator.stdin.write('q\n')
+  } else {
+    singleProofGenerator.stdin.write('q\n')
+  }
 }
 
-function shutDown(){
-  proofGenerator.stdin.write('q\n')
+function generateProof(multiOrSingle, paymentId){
+  if(multiOrSingle=='multi'){
+    multiProofGenerator.stdin.write(paymentId + '\n')
+  } else {
+    singleProofGenerator.stdin.write(paymentId + '\n')
+  }
 }
 
-function generateProof(){
-  proofGenerator.stdin.write('p\n')
-}
-
-function handleExecuteProgram(programName, msgStart, msgEnd, msgError, cb){
-  console.log(msgStart)
+function handleExecuteProgram(programName, args, msgStart, msgEnd, msgError, cb){
+//  console.log(msgStart)
 
   var succesfullyCompleted=true
-  const runCommand = spawn(programName)
+  const runCommand = spawn(programName, args)
 
   runCommand.stdout.on('data', (data) => {
     dataString = data.toString()
+
     if(data.indexOf('(leave) Call to r1cs_ppzksnark_online_verifier_strong_IC')>-1){
       var matches = getMatches(dataString, /verifier_strong_IC.\[[0-9]{0,2}.[0-9]*s/g)
       var noSecs = ''  
       if(matches && matches.length>0){
         noSecs = matches[0].substring(20,matches[0].length)
       } else {
-        console.log(dataString)
+  //      console.log(dataString)
       }
-      console.log('\nProof verification ended:', noSecs)
+  //    console.log('\nProof verification ended:', noSecs)
     } else {
-      process.stdout.write('.')
+  //    process.stdout.write('.')
     }
   })
 
@@ -61,7 +70,7 @@ function handleExecuteProgram(programName, msgStart, msgEnd, msgError, cb){
   })
 
   runCommand.on('close', (code) => {
-    console.log()
+ //   console.log()
     setProofCodeBlocking(false)
     if(code=='1' || !succesfullyCompleted){
       cb(msgError)
@@ -74,28 +83,19 @@ function handleExecuteProgram(programName, msgStart, msgEnd, msgError, cb){
 function generateNewKeyPair(multiOrSingle, cb){
   var generateKeyPairProgram = multiOrSingle == 'multi' ? './payment_multi_generate_keypair' : './payment_in_out_generate_keypair'
   setProofCodeBlocking(true)
-  if(getGeneratorRunning()==true){
-    shutDown()
+  if((multiOrSingle == 'multi' && multiProofGeneratorIsRunning == true) || multiOrSingle == 'single' && singleProofGeneratorIsRunning == true){
+    shutDown(multiOrSingle)
   }
-  handleExecuteProgram(generateKeyPairProgram, 'Generating key pair...', 'The key pair has been generated and the keys written to files', 'The key pair failed\n\n', function(){
+  handleExecuteProgram(generateKeyPairProgram, [], 'Generating key pair...', 'The key pair has been generated and the keys written to files', 'The key pair failed\n\n', function(){
     cb()
   })
 }
 
-function loadProvingKey(multiOrSingle){
-  console.log('Loading proving key from file.  This will take a few seconds')
-  setProofCodeBlocking(true)
-  if(multiOrSingle=='multi'){
-    proofGenerator = spawn('./payment_multi_generate_proof')
-  } else {
-    proofGenerator = spawn('./payment_in_out_generate_proof')
-  }
-  generatorIsRunning = true
-
+function logGeneratorOutput(proofGenerator){
   proofGenerator.stdout.on('data', (data) => {
     dataString = data.toString()
 
-    if(dataString.indexOf('Press enter p to generate a proof or q to quit')>-1){
+    if(dataString.indexOf('to generate a proof or q to quit')>-1){
       setProofCodeBlocking(false)
     }
 
@@ -107,17 +107,41 @@ function loadProvingKey(multiOrSingle){
       setProofCodeBlocking(false)
     }
 
+
+    if(data.indexOf('Starting proof generation for')>-1){
+  
+      var matches = getMatches(dataString, /proof_single_[0-9]{0,4}/g)
+      var payment_id = '1'  
+      if(matches && matches.length>0){
+        payment_id = matches[0].substring(13,matches[0].length)
+        eventEmitter.emit('proofGenerationStarted', payment_id);
+      } else {
+//        console.log(dataString)
+      }
+    }
+
+    if(data.indexOf('Proof was generated!!proof_single')>-1){
+  
+      var matches = getMatches(dataString, /proof_single_[0-9]{0,4}/g)
+      var payment_id = '1'  
+      if(matches && matches.length>0){
+        payment_id = matches[0].substring(13,matches[0].length)
+        eventEmitter.emit('proofGenerationComplete', payment_id);
+      } else {
+//        console.log(dataString)
+      }
+    }
+
     if(data.indexOf('Compute the proof')>-1){
       if(data.indexOf('(enter)')>-1){
-        console.log('\nGenerating proof')
+ //       console.log('\nGenerating proof')
       } else {
         var matches = getMatches(dataString, /\[[0-9]{0,2}.[0-9]*s/g)
         var noSecs = matches[1].substring(1,matches[1].length)
-        console.log('\nProof generation ended:', noSecs)
-        setProofCodeBlocking(false)
+ //       console.log('\nProof generation ended:', noSecs)
       }
     } else {
-      process.stdout.write('.')
+ //     process.stdout.write('.')
     }
 
   })
@@ -129,11 +153,26 @@ function loadProvingKey(multiOrSingle){
   proofGenerator.on('exit', function (code) {
     generatorIsRunning = false
   })
+
 }
 
-function verifyProof(multiOrSingle, cb){
+function loadProvingKey(multiOrSingle){
+  console.log('Loading proving key from file.  This will take a few seconds')
+  setProofCodeBlocking(true)
+  if(multiOrSingle=='multi'){
+    multiProofGenerator = spawn('./payment_multi_generate_proof')
+    generatorIsRunning = true
+    logGeneratorOutput(multiProofGenerator)
+  } else {
+    singleProofGenerator = spawn('./payment_in_out_generate_proof')
+    logGeneratorOutput(singleProofGenerator)
+    generatorIsRunning = true
+  }
+}
+
+function verifyProof(multiOrSingle, paymentId, cb){
   var verifyProofProgram = multiOrSingle == 'multi' ? './payment_multi_verify_proof' : './payment_in_out_verify_proof'
-  handleExecuteProgram(verifyProofProgram, '', '', 'The proof verification failed\n\n', function(verifyErr){
+  handleExecuteProgram(verifyProofProgram, [paymentId], '', '', 'The proof verification failed\n\n', function(verifyErr){
     cb(verifyErr)
   })
 }
@@ -141,8 +180,8 @@ function verifyProof(multiOrSingle, cb){
 exports.LoadProvingKey = loadProvingKey
 exports.SetProofCodeBlocking = setProofCodeBlocking
 exports.GetProofCodeBlocking = getProofCodeBlocking
-exports.GetGeneratorRunning = getGeneratorRunning
 exports.ShutDown = shutDown
 exports.GenerateNewKeyPair = generateNewKeyPair
 exports.GenerateProof = generateProof
 exports.VerifyProof = verifyProof
+exports.Events = eventEmitter

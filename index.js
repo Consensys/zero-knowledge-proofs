@@ -1,6 +1,7 @@
 var prompt = require('prompt')
 var colors = require('colors/safe')
 var fs = require('fs')
+var events = require('events');
 var automation = require('./client/automation.js')
 
 const sha256 = require('sha256')
@@ -66,7 +67,7 @@ function getListOfSha(inputArray){
   return returnVal
 }
 
-function generateProofInputs(fileSuffix, cb){
+function generateProofInputs(fileSuffix, paymentId, cb){
 
   var arr_startBalance = getArray(startBalance)
   var arr_endBalance = getArray(endBalance)
@@ -115,11 +116,11 @@ function generateProofInputs(fileSuffix, cb){
     }
   }
 
-  fs.writeFile('publicInputParameters_' + fileSuffix, publicParameters, function(errPublic) {
+  fs.writeFile('publicInputParameters_' + fileSuffix + '_' + paymentId, publicParameters, function(errPublic) {
     if(errPublic) {
       cb('An error occured generating the public input parameters',errPublic)
     } else {
-      fs.writeFile('privateInputParameters_' + fileSuffix, privateParameters, function(errPrivate) {
+      fs.writeFile('privateInputParameters_' + fileSuffix + '_' + paymentId, privateParameters, function(errPrivate) {
         if(errPrivate) {
           cb('An error occured generating the private input parameters',errPrivate)
         } else {
@@ -130,8 +131,27 @@ function generateProofInputs(fileSuffix, cb){
   }) 
 }
 
-function checkForKeypairAndRunGenerateProof(fileName, multiOrSingle, cb){
-  fs.exists(fileName, (exists) => {
+function checkAllFilesExist(multiOrSingle, cb){
+  if(multiOrSingle=='both'){
+    checkAllFilesExist('multi', function(exists){
+      if(exists){
+        checkAllFilesExist('single', function(exists){
+          cb(exists)
+        })
+      } else {
+        cb(false)
+      }
+    })
+  } else {
+    var fileName = 'provingKey_' + multiOrSingle
+    fs.exists(fileName, (exists) => {
+      cb(exists)
+    })
+  }
+}
+
+function checkForKeypairAndRunGenerateProof(multiOrSingle, cb){
+  checkAllFilesExist(multiOrSingle, function(exists){
     if(exists==true){
       automation.LoadProvingKey(multiOrSingle)
       cb()
@@ -199,12 +219,12 @@ function handleGenerateMultiPaymentProof(cb){
               endBalance -= outgoing[i]
             }
 
-            generateProofInputs("multi", function(msg1, err1){
+            generateProofInputs('multi', 1, function(msg1, err1){
               if(err1){
                 console.log(msg1, err1)
               } else {
                 console.log('Process started')
-                automation.GenerateProof()
+                automation.GenerateProof('multi', 1)
               }
               cb()
             })
@@ -230,12 +250,12 @@ function handleGenerateSinglePaymentProof(cb){
       outgoing[3] = 0
       endBalance = startBalance + incoming[0] - outgoing[0]
 
-      generateProofInputs("single", function(msg1, err1){
+      generateProofInputs('single', 1, function(msg1, err1){
         if(err1){
           console.log(msg1, err1)
         } else {
           console.log('Process started')
-          automation.GenerateProof()
+          automation.GenerateProof('single', 1)
         }
         cb()
       })
@@ -266,7 +286,7 @@ function handleSinglePayment(){
           handleSinglePayment()
         })
       } else if(answer.option == 3){
-        automation.VerifyProof('single', function(verifyErr){
+        automation.VerifyProof('single', 1, function(verifyErr){
           if(verifyErr){
             console.log(verifyErr)
             handleSinglePayment()
@@ -281,7 +301,7 @@ function handleSinglePayment(){
           }
         })
       } else {
-        automation.ShutDown()
+        automation.ShutDown('single')
         console.log('Quiting...')
       }
     })
@@ -318,7 +338,7 @@ function handleMultiplePayments(){
           handleMultiplePayments()
         })
       } else if(answer.option == 3){
-        automation.VerifyProof('multi', function(verifyErr){
+        automation.VerifyProof('multi', 1, function(verifyErr){
           if(verifyErr){
             console.log(verifyErr)
             handleMultiplePayments()
@@ -334,10 +354,138 @@ function handleMultiplePayments(){
           }
         })
       } else {
-        automation.ShutDown()
+        automation.ShutDown('multi')
         console.log('Quiting...')
       }
     })
+  }
+}
+
+var simulatorStatus='processing payments'
+var paymentId = 10
+var statusColor=colors.white
+var queuedPayments = []
+var unconfirmedPayments = []
+var availableLiquidity = startBalance
+
+function getUnconfirmedPaymentById(payment_id) {
+  var result  = unconfirmedPayments.filter(function(o){return o.paymentId == payment_id})
+  return result? result[0] : null; // or undefined
+}
+
+function removeUnconfimedPayment(payment_id){
+  var arrayWithoutUnconfirmedPayment = unconfirmedPayments.filter(function( obj ) {
+      return obj.paymentId != payment_id
+  })
+  return arrayWithoutUnconfirmedPayment
+}
+
+var onProofGenerationStarted = function (payment_id) {
+  if(payment_id > 1){  //We use ids greater than 1 for the simulator
+    var unconfirmedPayment = getUnconfirmedPaymentById(payment_id)
+    unconfirmedPayment.status = 'Generating proof'
+  }
+}
+
+var onProofGenerationComplete = function (payment_id) {
+  automation.SetProofCodeBlocking(false)
+  if(payment_id > 1){  //We use ids greater than 1 for the simulator
+    automation.VerifyProof('single', payment_id, function(verifyErr){
+      if(verifyErr){
+        console.log(verifyErr)
+      } else {
+        //get the right payment
+        var unconfirmedPayment = getUnconfirmedPaymentById(payment_id)
+        unconfirmedPayment.status = 'verifying proof'
+      //  console.log('payment: ', unconfirmedPayment)
+        if(unconfirmedPayment.direction=='incoming'){
+          startBalance = startBalance + unconfirmedPayment.amount
+          availableLiquidity = availableLiquidity + unconfirmedPayment.amount
+        } else {
+          startBalance = startBalance - unconfirmedPayment.amount
+        }
+        unconfirmedPayments = removeUnconfimedPayment(payment_id)
+      }
+    })
+  }
+}
+
+automation.Events.on('proofGenerationStarted', onProofGenerationStarted);
+automation.Events.on('proofGenerationComplete', onProofGenerationComplete);
+
+function generateSinglePaymentProofForSimulation(newPayment){
+  unconfirmedPayments.push(newPayment)
+  if(newPayment.direction=='incoming'){
+    incoming[0] = newPayment.amount
+    outgoing[0] = 0
+    endBalance = startBalance + newPayment.amount
+  } else {
+    incoming[0] = 0
+    outgoing[0] = newPayment.amount
+    endBalance = startBalance - newPayment.amount
+  }  
+  generateProofInputs('single', paymentId, function(msg, err){
+    if(err){
+      console.log('Error generating proof inputs')
+    } else {
+      //write the proof inputs (single proof)
+      automation.GenerateProof('single', paymentId)
+    }
+  })
+}
+function createANewPayment(){
+  var randomNumberBetween0and2000 = Math.floor(Math.random() * 2000)
+  var inOut = Math.floor(Math.random() + 0.5) == 0 ? "incoming" : "outgoing"
+  paymentId++
+  if(inOut=="incoming"){
+    var queuedRandom = Math.floor(Math.random() + 0.5) == 0 ? "queued" : "not-queued"
+    if(queuedRandom == "queued"){
+      //queuedPayments.push({paymentId: paymentId, direction: inOut, amount: randomNumberBetween0and2000})
+    } else {
+      var newPayment = {paymentId: paymentId, direction: inOut, amount: randomNumberBetween0and2000, status: 'Payment received - unconfirmed'}
+      generateSinglePaymentProofForSimulation(newPayment)
+    }
+  } 
+
+  if(inOut=="outgoing" && randomNumberBetween0and2000 <= availableLiquidity){
+    var newPayment = {paymentId: paymentId, direction: inOut, amount: randomNumberBetween0and2000, status: 'Payment sent - unconfirmed'}
+    availableLiquidity -= newPayment.amount
+    generateSinglePaymentProofForSimulation(newPayment)
+  } 
+
+  if(inOut=="outgoing" && randomNumberBetween0and2000 > startBalance){
+    //queuedPayments.push({paymentId: paymentId, direction: inOut, amount: randomNumberBetween0and2000})
+  } 
+
+}
+
+function handleSimulator(){
+  if(automation.GetProofCodeBlocking()==true){
+    process.stdout.write('.')
+    setTimeout(handleSimulator, 500)
+  } else {
+    console.log('\033[2J')
+    console.log('Current balance:', startBalance)
+    console.log('Available liquidity:', availableLiquidity)
+    console.log(statusColor('Status: ', simulatorStatus))
+    console.log()
+    console.log(colors.green.underline('Unconfimed payments'))
+    for(var i=0; i<unconfirmedPayments.length; i++){
+      if(unconfirmedPayments[i].direction=='incoming'){
+        console.log(colors.green(unconfirmedPayments[i].direction + ' ' +  ('     ' + unconfirmedPayments[i].amount).slice(-5) + ' ' + unconfirmedPayments[i].status))
+      } else {
+        console.log(colors.red(unconfirmedPayments[i].direction + ' ' +  ('     ' + unconfirmedPayments[i].amount).slice(-5) + ' ' + unconfirmedPayments[i].status))
+      }
+    }
+    console.log()
+    console.log(colors.yellow.underline('Gridlocked payments'))
+    for(var i=0; i<queuedPayments.length; i++){
+      console.log(colors.yellow(queuedPayments[i].direction + ' ' + queuedPayments[i].amount))
+    }
+    createANewPayment()
+
+    setTimeout(handleSimulator, 3000)
+    
   }
 }
 
@@ -346,12 +494,16 @@ function handleStartSelection(){
   console.log('Please select an option:\n1) Single payment in and single payment out\n2) Multiple payments in and multiple payments out\n3) Simulation of an RTGS payment node\n0) Quit')
   prompt.get(['option'], function(err, answer){
     if(answer.option == 1){
-      checkForKeypairAndRunGenerateProof('provingKey_single', 'single', function(){
+      checkForKeypairAndRunGenerateProof('single', function(){
         handleSinglePayment()
       })
     } else if (answer.option == 2){
-      checkForKeypairAndRunGenerateProof('provingKey_multi', 'multi', function(){
+      checkForKeypairAndRunGenerateProof('multi', function(){
         handleMultiplePayments()
+      })
+    } else if (answer.option == 3){
+      checkForKeypairAndRunGenerateProof('single', function(){
+        handleSimulator()
       })
     } else {
       console.log('Quiting...')
