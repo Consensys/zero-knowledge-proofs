@@ -482,9 +482,14 @@ function handleSimulator(){
     for(var i=0; i<queuedPayments.length; i++){
       console.log(colors.yellow(queuedPayments[i].direction + ' ' + queuedPayments[i].amount))
     }
+
+    for(var i=0; i<(20-unconfirmedPayments.length); i++){
+      console.log()
+    }
+
     createANewPayment()
 
-    setTimeout(handleSimulator, 3000)
+    setTimeout(handleSimulator, 2500)
     
   }
 }
