@@ -22,6 +22,7 @@ process.argv.forEach(function (val, index, array) {
     endBalance = startBalance
   }
 });
+
 longToByteArray = function(valueToConvert) {
   // we want to represent the input as a 8-bytes array
   var byteArray = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -132,12 +133,16 @@ function generateProofInputs(fileSuffix, cb){
 function checkForKeypairAndRunGenerateProof(fileName, multiOrSingle, cb){
   fs.exists(fileName, (exists) => {
     if(exists==true){
-      automation.HandleLoadProvingKey(multiOrSingle)
+      automation.LoadProvingKey(multiOrSingle)
+      cb()
     } else {
       console.log("\nThe provingKey and verificationKey need to be generated\n")
+      automation.GenerateNewKeyPair(multiOrSingle, function(){
+        automation.LoadProvingKey(multiOrSingle)
+        cb()
+      })
     }
-    cb()
-  });
+  })
 }
 
 function getPayment(incomingOrOutgoing, paymentNo, cb){
@@ -252,21 +257,16 @@ function handleSinglePayment(){
     console.log('Please select an option:\n1) Create a new key pair\n2) Generate a single-payment proof\n3) Verify single-payment proof\n0) Quit')
     prompt.get(['option'], function(err, answer){
       if(answer.option == 1){
-        automation.SetProofCodeBlocking(true)
-        if(automation.GetGeneratorRunning()==true){
-          automation.ShutDown()
-        }
-        automation.HandleExecuteProgram('./payment_in_out_generate_keypair', 'Generating key pair...', 'The key pair has been generated and the keys written to files (provingKey and verificationKey)', 'The key pair failed\n\n', function(){
-          checkForKeypairAndRunGenerateProof('provingKey_single', 'single', function(){
-            handleSinglePayment()
-          })
+        automation.GenerateNewKeyPair('single', function(){
+          automation.LoadProvingKey('single')
+          handleSinglePayment()
         })
       } else if (answer.option == 2){
         handleGenerateSinglePaymentProof(function(){
           handleSinglePayment()
         })
       } else if(answer.option == 3){
-        automation.HandleExecuteProgram('./payment_in_out_verify_proof', '', '', 'The proof verification failed\n\n', function(verifyErr){
+        automation.VerifyProof('single', function(verifyErr){
           if(verifyErr){
             console.log(verifyErr)
             handleSinglePayment()
@@ -309,21 +309,16 @@ function handleMultiplePayments(){
     console.log('Please select an option:\n1) Create a new key pair\n2) Generate a multi-payment proof\n3) Verify multi-payment proof\n0) Quit')
     prompt.get(['option'], function(err, answer){
       if(answer.option == 1){
-        automation.SetProofCodeBlocking(true)
-        if(automation.GetGeneratorRunning()==true){
-          automation.ShutDown()
-        }
-        automation.HandleExecuteProgram('./payment_multi_generate_keypair', 'Generating key pair...', 'The key pair has been generated and the keys written to files (provingKey_multi and verificationKey_multi)', 'The key pair failed\n\n', function(){
-          checkForKeypairAndRunGenerateProof('provingKey_multi', 'multi', function(){
-            handleMultiplePayments()
-          })
+        automation.GenerateNewKeyPair('multi', function(){
+          automation.LoadProvingKey('multi')
+          handleMultiplePayments()
         })
       } else if (answer.option == 2){
         handleGenerateMultiPaymentProof(function(){
           handleMultiplePayments()
         })
       } else if(answer.option == 3){
-        automation.HandleExecuteProgram('./payment_multi_verify_proof', '', '', 'The proof verification failed\n\n', function(verifyErr){
+        automation.VerifyProof('multi', function(verifyErr){
           if(verifyErr){
             console.log(verifyErr)
             handleMultiplePayments()

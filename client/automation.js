@@ -33,7 +33,56 @@ function generateProof(){
   proofGenerator.stdin.write('p\n')
 }
 
-function handleLoadProvingKey(multiOrSingle){
+function handleExecuteProgram(programName, msgStart, msgEnd, msgError, cb){
+  console.log(msgStart)
+
+  var succesfullyCompleted=true
+  const runCommand = spawn(programName)
+
+  runCommand.stdout.on('data', (data) => {
+    dataString = data.toString()
+    if(data.indexOf('(leave) Call to r1cs_ppzksnark_online_verifier_strong_IC')>-1){
+      var matches = getMatches(dataString, /verifier_strong_IC.\[[0-9]{0,2}.[0-9]*s/g)
+      var noSecs = ''  
+      if(matches && matches.length>0){
+        noSecs = matches[0].substring(20,matches[0].length)
+      } else {
+        console.log(dataString)
+      }
+      console.log('\nProof verification ended:', noSecs)
+    } else {
+      process.stdout.write('.')
+    }
+  })
+
+  runCommand.stderr.on('data', (data) => {
+    console.log(data.toString())
+    succesfullyCompleted = false
+  })
+
+  runCommand.on('close', (code) => {
+    console.log()
+    setProofCodeBlocking(false)
+    if(code=='1' || !succesfullyCompleted){
+      cb(msgError)
+    } else {
+      cb(null)
+    }
+  })
+}
+
+function generateNewKeyPair(multiOrSingle, cb){
+  var generateKeyPairProgram = multiOrSingle == 'multi' ? './payment_multi_generate_keypair' : './payment_in_out_generate_keypair'
+  setProofCodeBlocking(true)
+  if(getGeneratorRunning()==true){
+    shutDown()
+  }
+  handleExecuteProgram(generateKeyPairProgram, 'Generating key pair...', 'The key pair has been generated and the keys written to files', 'The key pair failed\n\n', function(){
+    cb()
+  })
+}
+
+function loadProvingKey(multiOrSingle){
   console.log('Loading proving key from file.  This will take a few seconds')
   setProofCodeBlocking(true)
   if(multiOrSingle=='multi'){
@@ -82,49 +131,18 @@ function handleLoadProvingKey(multiOrSingle){
   })
 }
 
-function handleExecuteProgram(programName, msgStart, msgEnd, msgError, cb){
-  console.log(msgStart)
-
-  var succesfullyCompleted=true
-  const runCommand = spawn(programName)
-
-  runCommand.stdout.on('data', (data) => {
-    dataString = data.toString()
-    if(data.indexOf('(leave) Call to r1cs_ppzksnark_online_verifier_strong_IC')>-1){
-      var matches = getMatches(dataString, /verifier_strong_IC.\[[0-9]{0,2}.[0-9]*s/g)
-      var noSecs = ''  
-      if(matches && matches.length>0){
-        noSecs = matches[0].substring(20,matches[0].length)
-      } else {
-        console.log(dataString)
-      }
-      console.log('\nProof verification ended:', noSecs)
-    } else {
-      process.stdout.write('.')
-    }
-  })
-
-  runCommand.stderr.on('data', (data) => {
-    console.log(data.toString())
-    succesfullyCompleted = false
-  })
-
-  runCommand.on('close', (code) => {
-    console.log()
-    setProofCodeBlocking(false)
-    if(code=='1' || !succesfullyCompleted){
-      cb(msgError)
-    } else {
-      cb(null)
-    }
+function verifyProof(multiOrSingle, cb){
+  var verifyProofProgram = multiOrSingle == 'multi' ? './payment_multi_verify_proof' : './payment_in_out_verify_proof'
+  handleExecuteProgram(verifyProofProgram, '', '', 'The proof verification failed\n\n', function(verifyErr){
+    cb(verifyErr)
   })
 }
 
-
-exports.HandleLoadProvingKey = handleLoadProvingKey
-exports.HandleExecuteProgram = handleExecuteProgram
+exports.LoadProvingKey = loadProvingKey
 exports.SetProofCodeBlocking = setProofCodeBlocking
 exports.GetProofCodeBlocking = getProofCodeBlocking
 exports.GetGeneratorRunning = getGeneratorRunning
 exports.ShutDown = shutDown
+exports.GenerateNewKeyPair = generateNewKeyPair
 exports.GenerateProof = generateProof
+exports.VerifyProof = verifyProof
