@@ -43,7 +43,16 @@ int genProof(r1cs_ppzksnark_proving_key<default_r1cs_ppzksnark_pp> provingKey_in
   } else {
     stringstream proofStream;
     proofStream << proof;
-    cout << proofStream.str();
+
+    ofstream fileOut;
+    fileOut.open("proof_single_1");
+
+    fileOut << proofStream.rdbuf();
+    fileOut.close();
+
+    cout << "**** Starting proof output ****" << endl;
+    cout << proofStream.str() << endl;
+    cout << "**** End of proof output ****" << endl;
     return 0;
   }
 }
