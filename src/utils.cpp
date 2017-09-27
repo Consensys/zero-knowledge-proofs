@@ -16,23 +16,25 @@ std::vector<bool> int_list_to_bits_local(const vector<unsigned long> &l, const s
     return res;
 }
 
-std::vector<std::vector<unsigned long>> fillValuesFromfile(string fileName ) {
+std::vector<long unsigned int> fillValuesFromString(string line ) 
 {
-    string line;
+  stringstream iss( line );
 
-    std::vector<std::vector<long unsigned int>> outputValues;
-    ifstream inputParameters(fileName);
-    while(getline(inputParameters, line)){
+  int number; 
+  vector<long unsigned int> outputValue;
+  while ( iss >> number )
+    outputValue.push_back( number );
+  return outputValue;
+}
 
-      stringstream iss( line );
+std::vector<std::vector<unsigned long>> fillValuesFromfile(string fileName) 
+{
+  string line;
 
-      int number; 
-      vector<long unsigned int> outputValue;
-      while ( iss >> number )
-        outputValue.push_back( number );
-
-      outputValues.push_back(outputValue);
-    }
-    return outputValues;
+  std::vector<std::vector<long unsigned int>> outputValues;
+  ifstream inputParameters(fileName);
+  while(getline(inputParameters, line)){
+    outputValues.push_back(fillValuesFromString(line));
   }
+  return outputValues;
 }

@@ -33,11 +33,23 @@ function shutDown(multiOrSingle){
   }
 }
 
-function generateProof(multiOrSingle, paymentId){
+function generateProof(multiOrSingle, publicParameters, privateParameters){
   if(multiOrSingle=='multi'){
-    multiProofGenerator.stdin.write(paymentId + '\n')
+    multiProofGenerator.stdin.write('generate proof\n')
+    for(var i=0; i<publicParameters.length; i++){
+      multiProofGenerator.stdin.write(publicParameters[i] + '\n')
+    }
+    for(var i=0; i<privateParameters.length; i++){
+      multiProofGenerator.stdin.write(privateParameters[i] + '\n')
+    }
   } else {
-    singleProofGenerator.stdin.write(paymentId + '\n')
+    singleProofGenerator.stdin.write('generate proof\n')
+    for(var i=0; i<publicParameters.length; i++){
+      singleProofGenerator.stdin.write(publicParameters[i] + '\n')
+    }
+    for(var i=0; i<privateParameters.length; i++){
+      singleProofGenerator.stdin.write(privateParameters[i] + '\n')
+    }
   }
 }
 
@@ -94,7 +106,7 @@ function generateNewKeyPair(multiOrSingle, cb){
 function logGeneratorOutput(proofGenerator){
   proofGenerator.stdout.on('data', (data) => {
     dataString = data.toString()
-
+    console.log(dataString)
     if(dataString.indexOf('to generate a proof or q to quit')>-1){
       setProofCodeBlocking(false)
     }

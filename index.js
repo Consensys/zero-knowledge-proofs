@@ -3,8 +3,7 @@ var colors = require('colors/safe')
 var fs = require('fs')
 var events = require('events');
 var automation = require('./client/automation.js')
-
-const sha256 = require('sha256')
+var inputValues = require('./client/inputValues.js')
 
 var startBalance = 0
 var endBalance = 0
@@ -24,112 +23,6 @@ process.argv.forEach(function (val, index, array) {
   }
 });
 
-longToByteArray = function(valueToConvert) {
-  // we want to represent the input as a 8-bytes array
-  var byteArray = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-
-  for ( var index = byteArray.length-1; index >=0; index -- ) {
-      var byte = valueToConvert & 0xff
-      byteArray [ index ] = byte
-      valueToConvert = (valueToConvert - byte) / 256 
-  }
-
-  return byteArray;
-}
-
-function getArray(value){
-  var r_value = longToByteArray(value)
-  var arr_salt = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-  return r_value.concat(arr_salt)
-}
-
-function getListOfArrays(inputArray){
-  returnVal = []
-  for(var i=0;i<noPayments;i++){
-    returnVal.push(getArray(inputArray[i]))
-  }
-  return returnVal
-}
-
-function getListOfBuffers(inputArray){
-  returnVal = []
-  for(var i=0;i<noPayments;i++){
-    returnVal.push(Buffer.from(inputArray[i]))
-  }
-  return returnVal
-}
-
-function getListOfSha(inputArray){
-  returnVal = []
-  for(var i=0;i<noPayments;i++){
-    returnVal.push(sha256(inputArray[i], {asBytes: true}))
-  }
-  return returnVal
-}
-
-function generateProofInputs(fileSuffix, paymentId, cb){
-
-  var arr_startBalance = getArray(startBalance)
-  var arr_endBalance = getArray(endBalance)
-  var arr_incoming = getListOfArrays(incoming)
-  var arr_outgoing = getListOfArrays(outgoing)
-
-  var b_startBalance = Buffer.from(arr_startBalance)
-  var b_endBalance = Buffer.from(arr_endBalance)
-  var b_incoming = getListOfBuffers(arr_incoming)
-  var b_outgoing = getListOfBuffers(arr_outgoing)
-
-  var public_startBalance = sha256(b_startBalance, {asBytes: true})
-  var public_endBalance = sha256(b_endBalance, {asBytes: true})
-  var public_incoming = getListOfSha(b_incoming)
-  var public_outgoing = getListOfSha(b_outgoing)
-
-  var publicParameters = public_startBalance.toString().replace(/,/g, ' ') + "\n"
-  publicParameters += public_endBalance.toString().replace(/,/g, ' ') + "\n"
-  publicParameters += public_incoming[0].toString().replace(/,/g, ' ') + "\n"
-
-  if(fileSuffix=="multi"){
-    for(var i=1;i<noPayments;i++){
-      publicParameters += public_incoming[i].toString().replace(/,/g, ' ') + "\n"
-    }
-  }
-
-  publicParameters += public_outgoing[0].toString().replace(/,/g, ' ') + "\n"
-  if(fileSuffix=="multi"){
-    for(var i=1;i<noPayments;i++){
-      publicParameters += public_outgoing[i].toString().replace(/,/g, ' ') + "\n"
-    }
-  }
-
-  var privateParameters = arr_startBalance.toString().replace(/,/g, ' ') + "\n"
-  privateParameters += arr_endBalance.toString().replace(/,/g, ' ') + "\n"
-  privateParameters += arr_incoming[0].toString().replace(/,/g, ' ') + "\n"
-  if(fileSuffix=="multi"){
-    for(var i=1;i<noPayments;i++){
-      privateParameters += arr_incoming[i].toString().replace(/,/g, ' ') + "\n"
-    }
-  }
-  privateParameters += arr_outgoing[0].toString().replace(/,/g, ' ') + "\n"
-  if(fileSuffix=="multi"){
-    for(var i=1;i<noPayments;i++){
-      privateParameters += arr_outgoing[i].toString().replace(/,/g, ' ') + "\n"
-    }
-  }
-
-  fs.writeFile('publicInputParameters_' + fileSuffix + '_' + paymentId, publicParameters, function(errPublic) {
-    if(errPublic) {
-      cb('An error occured generating the public input parameters',errPublic)
-    } else {
-      fs.writeFile('privateInputParameters_' + fileSuffix + '_' + paymentId, privateParameters, function(errPrivate) {
-        if(errPrivate) {
-          cb('An error occured generating the private input parameters',errPrivate)
-        } else {
-          cb('', null)
-        }
-      }) 
-    }
-  }) 
-}
 
 function checkAllFilesExist(multiOrSingle, cb){
   if(multiOrSingle=='both'){
@@ -219,13 +112,8 @@ function handleGenerateMultiPaymentProof(cb){
               endBalance -= outgoing[i]
             }
 
-            generateProofInputs('multi', 1, function(msg1, err1){
-              if(err1){
-                console.log(msg1, err1)
-              } else {
-                console.log('Process started')
-                automation.GenerateProof('multi', 1)
-              }
+            inputValues.GenerateProofInputs(startBalance, endBalance, incoming, outgoing, function(publicParameters, privateParameters){
+              automation.GenerateProof('multi', publicParameters, privateParameters)
               cb()
             })
           }
@@ -250,13 +138,8 @@ function handleGenerateSinglePaymentProof(cb){
       outgoing[3] = 0
       endBalance = startBalance + incoming[0] - outgoing[0]
 
-      generateProofInputs('single', 1, function(msg1, err1){
-        if(err1){
-          console.log(msg1, err1)
-        } else {
-          console.log('Process started')
-          automation.GenerateProof('single', 1)
-        }
+      inputValues.GenerateProofInputs(startBalance, endBalance, [incoming[0]], [outgoing[0]], function(publicParameters, privateParameters){
+        automation.GenerateProof('single', publicParameters, privateParameters)
         cb()
       })
     })
@@ -424,15 +307,11 @@ function generateSinglePaymentProofForSimulation(newPayment){
     outgoing[0] = newPayment.amount
     endBalance = startBalance - newPayment.amount
   }  
-  generateProofInputs('single', paymentId, function(msg, err){
-    if(err){
-      console.log('Error generating proof inputs')
-    } else {
-      //write the proof inputs (single proof)
-      automation.GenerateProof('single', paymentId)
-    }
+  inputValues.GenerateProofInputs(startBalance, endBalance, [incoming[0]], [outgoing[0]], function(publicParameters, privateParameters){
+    automation.GenerateProof('single', publicParameters, privateParameters)
   })
 }
+
 function createANewPayment(){
   var randomNumberBetween0and2000 = Math.floor(Math.random() * 2000)
   var inOut = Math.floor(Math.random() + 0.5) == 0 ? "incoming" : "outgoing"
@@ -471,19 +350,21 @@ function handleSimulator(){
     console.log()
     console.log(colors.green.underline('Unconfimed payments'))
     for(var i=0; i<unconfirmedPayments.length; i++){
-      if(unconfirmedPayments[i].direction=='incoming'){
-        console.log(colors.green(unconfirmedPayments[i].direction + ' ' +  ('     ' + unconfirmedPayments[i].amount).slice(-5) + ' ' + unconfirmedPayments[i].status))
-      } else {
-        console.log(colors.red(unconfirmedPayments[i].direction + ' ' +  ('     ' + unconfirmedPayments[i].amount).slice(-5) + ' ' + unconfirmedPayments[i].status))
-      }
+      var dcColor = colors.green
+      if(unconfirmedPayments[i].direction=='outgoing'){
+        dcColor = colors.red
+      } 
+      console.log(dcColor(unconfirmedPayments[i].direction + ' ' +  ('     ' + unconfirmedPayments[i].amount).slice(-5) + ' ' + unconfirmedPayments[i].status))
     }
-    console.log()
+    for(var i=0; i<(20-unconfirmedPayments.length); i++){
+      console.log()
+    }
     console.log(colors.yellow.underline('Gridlocked payments'))
     for(var i=0; i<queuedPayments.length; i++){
       console.log(colors.yellow(queuedPayments[i].direction + ' ' + queuedPayments[i].amount))
     }
 
-    for(var i=0; i<(20-unconfirmedPayments.length); i++){
+    for(var i=0; i<(20-queuedPayments.length); i++){
       console.log()
     }
 

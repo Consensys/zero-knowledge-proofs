@@ -13,7 +13,7 @@
 using namespace libsnark;
 using namespace std;
 
-int genProof(r1cs_ppzksnark_proving_key<default_r1cs_ppzksnark_pp> provingKey_in, string proofFileName, string publicInputs, string privateInputs)
+int genProof(r1cs_ppzksnark_proving_key<default_r1cs_ppzksnark_pp> provingKey_in, string startBalancePublic, string endBalancePublic, string incomingPublic, string outgoingPublic, string startBalancePrivate, string endBalancePrivate, string incomingPrivate, string outgoingPrivate)
 {
   // Initialize bit_vectors for all of the variables involved.
   vector<bool> h_startBalance_bv(256);
@@ -25,19 +25,16 @@ int genProof(r1cs_ppzksnark_proving_key<default_r1cs_ppzksnark_pp> provingKey_in
   vector<bool> r_incoming_bv(256);
   vector<bool> r_outgoing_bv(256);
 
-  vector<vector<unsigned long int>> publicValues = fillValuesFromfile(publicInputs);
-  h_startBalance_bv = int_list_to_bits_local(publicValues[0], 8);
-  h_endBalance_bv = int_list_to_bits_local(publicValues[1], 8);
-  h_incoming_bv = int_list_to_bits_local(publicValues[2], 8);
-  h_outgoing_bv = int_list_to_bits_local(publicValues[3], 8);
+  h_startBalance_bv = int_list_to_bits_local(fillValuesFromString(startBalancePublic), 8);
+  h_endBalance_bv = int_list_to_bits_local(fillValuesFromString(endBalancePublic), 8);
+  h_incoming_bv = int_list_to_bits_local(fillValuesFromString(incomingPublic), 8);
+  h_outgoing_bv = int_list_to_bits_local(fillValuesFromString(outgoingPublic), 8);
 
-  vector<vector<unsigned long int>> privateValues = fillValuesFromfile(privateInputs);
-  r_startBalance_bv = int_list_to_bits_local(privateValues[0], 8);
-  r_endBalance_bv = int_list_to_bits_local(privateValues[1], 8);
-  r_incoming_bv = int_list_to_bits_local(privateValues[2], 8);
-  r_outgoing_bv = int_list_to_bits_local(privateValues[3], 8);
+  r_startBalance_bv = int_list_to_bits_local(fillValuesFromString(startBalancePrivate), 8);
+  r_endBalance_bv = int_list_to_bits_local(fillValuesFromString(endBalancePrivate), 8);
+  r_incoming_bv = int_list_to_bits_local(fillValuesFromString(incomingPrivate), 8);
+  r_outgoing_bv = int_list_to_bits_local(fillValuesFromString(outgoingPrivate), 8);
 
-  cout << "Starting proof generation for " + proofFileName << endl;
   boost::optional<libsnark::r1cs_ppzksnark_proof<libff::alt_bn128_pp>> proof = generate_payment_in_out_proof<default_r1cs_ppzksnark_pp>(provingKey_in, h_startBalance_bv, h_endBalance_bv, h_incoming_bv, h_outgoing_bv, r_startBalance_bv, r_endBalance_bv, r_incoming_bv, r_outgoing_bv);
 
   if(proof == boost::none)
@@ -46,13 +43,7 @@ int genProof(r1cs_ppzksnark_proving_key<default_r1cs_ppzksnark_pp> provingKey_in
   } else {
     stringstream proofStream;
     proofStream << proof;
-
-    ofstream fileOut;
-    fileOut.open(proofFileName);
-
-    fileOut << proofStream.rdbuf();
-    fileOut.close();
-    cout << "Proof was generated!!" << proofFileName << endl;
+    cout << proofStream.str();
     return 0;
   }
 }
@@ -61,27 +52,42 @@ int getUserInput(r1cs_ppzksnark_proving_key<default_r1cs_ppzksnark_pp> provingKe
 {
   string inputTemp = "";
   int result=0;
-  cout << "Press enter paymentId to generate a proof or q to quit" << endl;
-  cin >> inputTemp;  
+  cout << "Press enter 'generate proof' to generate a proof or q to quit" << endl;
+  getline(cin, inputTemp);
   cout << "Input from console: " << inputTemp << endl;
   if(inputTemp != "q")
   {
-    string proofName = "proof_single_";
-    string proofNameWithId = proofName + inputTemp;
-    string publicInputs = "publicInputParameters_single_";
-    string publicInputsWithId = publicInputs + inputTemp;
-    string privateInputs = "privateInputParameters_single_";
-    string privateInputsWithId = privateInputs + inputTemp;
+    if(inputTemp == "generate proof")
+    {
+      string startBalancePublic = "";
+      string endBalancePublic = "";
+      string incomingPublic = "";
+      string outgoingPublic = "";
+      string startBalancePrivate = "";
+      string endBalancePrivate = "";
+      string incomingPrivate = "";
+      string outgoingPrivate = "";
+      getline(cin, startBalancePublic);
+      getline(cin, endBalancePublic);
+      getline(cin, incomingPublic);
+      getline(cin, outgoingPublic);
+      getline(cin, startBalancePrivate);
+      getline(cin, endBalancePrivate);
+      getline(cin, incomingPrivate);
+      getline(cin, outgoingPrivate);
 
-    cout << proofNameWithId << endl;
-    result = genProof(provingKey_in, proofNameWithId, publicInputsWithId, privateInputsWithId);
-    if(result!=0)
-    {
-      cout << "There was an error generating the proof" << endl;
-      return getUserInput(provingKey_in);
-    }
-    else
-    {
+      result = genProof(provingKey_in, startBalancePublic, endBalancePublic, incomingPublic, outgoingPublic, startBalancePrivate, endBalancePrivate, incomingPrivate, outgoingPrivate);
+      if(result!=0)
+      {
+        cout << "There was an error generating the proof" << endl;
+        return getUserInput(provingKey_in);
+      }
+      else
+      {
+        return getUserInput(provingKey_in);
+      }
+    } else {
+      cout << "Unexpected input value" << endl;
       return getUserInput(provingKey_in);
     }
   }
