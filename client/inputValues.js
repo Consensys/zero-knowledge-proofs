@@ -87,7 +87,6 @@ function generateProofInputs(startBalance, endBalance, incoming, outgoing, cb){
     privateParameters.push(arr_outgoing[i].toString().replace(/,/g, ' '))
   }
 
-  console.log('public parameters[0]:', publicParameters[0])
   cb(publicParameters, privateParameters)
 }
 
