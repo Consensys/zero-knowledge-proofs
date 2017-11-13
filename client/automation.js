@@ -132,7 +132,7 @@ function logGeneratorOutput(proofGenerator){
       }
     }
 
-    if(data.indexOf('Compute the proof')>-1){
+    /*if(data.indexOf('Compute the proof')>-1){
       if(data.indexOf('(enter)')>-1){
  //       console.log('\nGenerating proof')
       } else {
@@ -142,7 +142,7 @@ function logGeneratorOutput(proofGenerator){
       }
     } else {
  //     process.stdout.write('.')
-    }
+    }*/
 
   })
 
