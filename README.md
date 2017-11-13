@@ -19,7 +19,7 @@ Some more background here: <https://www.youtube.com/watch?v=0KhFhvdEpoA>
 
 * On Ubuntu 16.04 LTS:
 
-        `$ sudo apt-get install build-essential cmake git libgmp3-dev libprocps4-dev python-markdown libboost-all-dev libssl-dev`
+        `$ sudo apt-get install build-essential cmake git libgmp3-dev libprocps4-dev python-markdown libboost-all-dev libssl-dev pkg-config`
 
 * On Ubuntu 14.04 LTS:
 
