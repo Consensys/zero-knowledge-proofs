@@ -171,8 +171,10 @@ function loadProvingKey(multiOrSingle){
 }
 
 function verifyProof(multiOrSingle, paymentId, cb){
+    eventEmitter.emit('proofVerificationStarted', paymentId);
   var verifyProofProgram = multiOrSingle == 'multi' ? './payment_multi_verify_proof' : './payment_in_out_verify_proof'
   handleExecuteProgram(verifyProofProgram, [paymentId], '', '', 'The proof verification failed\n\n', function(verifyErr){
+    eventEmitter.emit('proofVerificationComplete', paymentId);
     cb(verifyErr)
   })
 }

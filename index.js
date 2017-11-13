@@ -6,6 +6,12 @@ var automation = require('./client/automation.js')
 
 const sha256 = require('sha256')
 
+let startTime = null
+let proofsVerified = {}
+let proofsGenerated = {}
+let numberOfProofsVerified = 0
+let numberOfProofsGenerated = 0
+
 var startBalance = 0
 var endBalance = 0
 var incoming = [0,0,0,0,0,0]
@@ -394,7 +400,7 @@ var onProofGenerationComplete = function (payment_id) {
       if(verifyErr){
         console.log(verifyErr)
       } else {
-        //get the right payment
+        // proof is verified, get the right payment
         var unconfirmedPayment = getUnconfirmedPaymentById(payment_id)
         unconfirmedPayment.status = 'verifying proof'
       //  console.log('payment: ', unconfirmedPayment)
@@ -459,12 +465,66 @@ function createANewPayment(){
 
 }
 
+automation.Events.on('proofGenerationStarted', function(paymentId){
+  if(startTime === null){
+    startTime = new Date().getTime()
+  }
+  proofsGenerated[paymentId] = {
+    startTime: new Date().getTime(),
+    elapsedTime: null
+  }
+});
+
+automation.Events.on('proofGenerationComplete', function(paymentId){
+  numberOfProofsGenerated++
+  let elapsedTime = new Date().getTime() - proofsGenerated[paymentId].startTime
+  proofsGenerated[paymentId].elapsedTime = elapsedTime
+});
+
+automation.Events.on('proofVerificationStarted', function(paymentId){
+  if(startTime === null){
+    startTime = new Date().getTime()
+  }
+  proofsVerified[paymentId] = {
+    startTime: new Date().getTime(),
+    elapsedTime: null
+  }
+});
+
+automation.Events.on('proofVerificationComplete', function(paymentId){
+  numberOfProofsVerified++
+  let elapsedTime = new Date().getTime() - proofsVerified[paymentId].startTime
+  proofsVerified[paymentId].elapsedTime = elapsedTime
+});
+
 function handleSimulator(){
   if(automation.GetProofCodeBlocking()==true){
     process.stdout.write('.')
     setTimeout(handleSimulator, 500)
   } else {
     console.log('\033[2J')
+    if(startTime !== null){
+      let elapsedTime = 0
+      for(let key in proofsGenerated){
+        let generation = proofsGenerated[key]
+        if(generation.elapsedTime !== null){
+          elapsedTime += generation.elapsedTime
+        }
+      }
+      let proofsPerSecond = numberOfProofsGenerated/(elapsedTime/1000)
+      console.log('proof per second:', proofsPerSecond.toFixed(3), 
+        '| seconds per proof', (1/proofsPerSecond).toFixed(3))
+      elapsedTime = 0
+      for(let key in proofsVerified){
+        let verification = proofsVerified[key]
+        if(verification.elapsedTime !== null){
+          elapsedTime += verification.elapsedTime
+        }
+      }
+      verificationPerSecond = numberOfProofsVerified/(elapsedTime/1000)
+      console.log('verifications per second:', verificationPerSecond.toFixed(3), 
+        '| seconds per verification', (1/verificationPerSecond).toFixed(3))
+    }
     console.log('Current balance:', startBalance)
     console.log('Available liquidity:', availableLiquidity)
     console.log(statusColor('Status: ', simulatorStatus))
